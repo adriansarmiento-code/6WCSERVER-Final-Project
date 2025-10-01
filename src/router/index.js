@@ -13,6 +13,7 @@ import AboutPage from "@/views/AboutPage.vue";
 import AdminLoginPage from "@/views/admin/AdminLoginPage.vue";
 import AdminDashboardPage from "@/views/admin/AdminDashboardPage.vue";
 import store from "@/store";
+import ContactPage from "@/views/ContactPage.vue";
 
 const routes = [
   {
@@ -75,6 +76,11 @@ const routes = [
     path: "/admin/login",
     name: "AdminLogin",
     component: AdminLoginPage,
+  },
+  {
+    path: "/contact",
+    name: "Contact",
+    component: ContactPage,
   },
   {
     path: "/admin/dashboard",

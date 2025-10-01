@@ -21,9 +21,7 @@
           </div>
         </div>
         <div class="hero-image">
-          <div class="placeholder-image">
-            <span>Service Provider Image</span>
-          </div>
+          <div class="placeholder-image"></div>
         </div>
       </div>
     </section>
@@ -228,6 +226,21 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.hero-image .placeholder-image {
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  background-image: url("@/assets/images/serviceprovider.jpg");
+  background-size: cover;
+  background-position: center;
 }
 
 .placeholder-image {
