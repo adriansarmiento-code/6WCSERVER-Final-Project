@@ -3,6 +3,11 @@
     <div class="container">
       <div class="header-content">
         <router-link to="/" class="logo">
+          <img
+            src="@/assets/images/logo.png"
+            alt="Fixify Logo"
+            class="logo-image"
+          />
           <h1>Fixify</h1>
         </router-link>
         <nav class="nav">
@@ -48,7 +53,21 @@ export default {
 }
 
 .logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   text-decoration: none;
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.02);
+}
+
+.logo-image {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
 }
 
 .logo h1 {
@@ -97,6 +116,15 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .logo-image {
+    width: 40px;
+    height: 40px;
+  }
+
+  .logo h1 {
+    font-size: 1.5rem;
+  }
+
   .nav {
     display: none;
   }

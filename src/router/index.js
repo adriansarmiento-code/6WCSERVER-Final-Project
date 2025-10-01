@@ -1,4 +1,3 @@
-// src/router/index.js
 import { createRouter, createWebHistory } from "vue-router";
 import LandingPage from "@/views/LandingPage.vue";
 import LoginPage from "@/views/auth/LoginPage.vue";
@@ -11,6 +10,9 @@ import DashboardPage from "@/views/user/DashboardPage.vue";
 import PaymentSimulationPage from "@/views/payment/PaymentSimulationPage.vue";
 import MessagingPage from "@/views/communication/MessagingPage.vue";
 import AboutPage from "@/views/AboutPage.vue";
+import AdminLoginPage from "@/views/admin/AdminLoginPage.vue";
+import AdminDashboardPage from "@/views/admin/AdminDashboardPage.vue";
+import store from "@/store";
 
 const routes = [
   {
@@ -67,6 +69,25 @@ const routes = [
     path: "/about",
     name: "About",
     component: AboutPage,
+  },
+  // Admin Routes
+  {
+    path: "/admin/login",
+    name: "AdminLogin",
+    component: AdminLoginPage,
+  },
+  {
+    path: "/admin/dashboard",
+    name: "AdminDashboard",
+    component: AdminDashboardPage,
+    beforeEnter: (to, from, next) => {
+      // Simple auth check - in production, verify with backend
+      if (store.getters.isAdmin) {
+        next();
+      } else {
+        next("/admin/login");
+      }
+    },
   },
 ];
 
