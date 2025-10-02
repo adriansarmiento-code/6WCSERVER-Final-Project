@@ -154,7 +154,7 @@
               >Sign Up Now</router-link
             >
             <router-link
-              to="/provider-signup"
+              to="/signup?type=provider"
               class="btn btn-outline btn-large"
             >
               Become a Provider

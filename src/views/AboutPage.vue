@@ -32,7 +32,7 @@
             </p>
           </div>
           <div class="mission-image">
-            <div class="placeholder-box">Mission Image</div>
+            <img src="@/assets/images/missionimage.jpg" alt="Fixify Mission" />
           </div>
         </div>
       </div>
@@ -325,6 +325,14 @@ export default {
   justify-content: center;
 }
 
+.mission-image img {
+  width: 100%;
+  max-width: 500px;
+  height: 400px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+}
 .placeholder-box {
   width: 100%;
   aspect-ratio: 1;

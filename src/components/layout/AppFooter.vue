@@ -18,7 +18,9 @@
           <h4>For Providers</h4>
           <ul>
             <li>
-              <router-link to="/provider-signup">Become a Provider</router-link>
+              <router-link to="/signup?type=provider"
+                >Become a Provider</router-link
+              >
             </li>
             <li>
               <router-link to="/provider-guidelines">Guidelines</router-link>
@@ -28,8 +30,8 @@
         <div class="footer-section">
           <h4>Legal</h4>
           <ul>
-            <li><router-link to="/terms">Terms of Service</router-link></li>
-            <li><router-link to="/privacy">Privacy Policy</router-link></li>
+            <li>Terms of Service</li>
+            <li>Privacy Policy</li>
           </ul>
         </div>
       </div>

@@ -265,6 +265,7 @@
 <script>
 import AppHeader from "@/components/layout/AppHeader.vue";
 import AppFooter from "@/components/layout/AppFooter.vue";
+import { bookingAPI, providerAPI } from "@/services/api";
 
 export default {
   name: "DashboardPage",
@@ -290,97 +291,11 @@ export default {
         "Completed",
         "Cancelled",
       ],
-      user: {
-        name: "Test User",
-        email: "test@example.com",
-        phone: "0912 345 6789",
-      },
-      bookings: [
-        {
-          id: 1,
-          serviceName: "Emergency Leak Repair",
-          providerName: "Juan dela Cruz",
-          date: "Oct 15, 2025",
-          time: "2:00 PM",
-          location: "123 Main St, Manila",
-          amount: 800,
-          status: "pending",
-        },
-        {
-          id: 2,
-          serviceName: "House Cleaning",
-          providerName: "Maria Santos",
-          date: "Oct 12, 2025",
-          time: "10:00 AM",
-          location: "456 Oak Ave, Quezon City",
-          amount: 1200,
-          status: "completed",
-        },
-        {
-          id: 3,
-          serviceName: "Electrical Wiring",
-          providerName: "Pedro Reyes",
-          date: "Oct 14, 2025",
-          time: "1:00 PM",
-          location: "789 Pine Rd, Makati",
-          amount: 1500,
-          status: "in-progress",
-        },
-      ],
-      favoriteProviders: [
-        {
-          id: 1,
-          name: "Juan dela Cruz",
-          category: "Plumbing",
-          rating: 4.8,
-          reviews: 127,
-          image: "https://via.placeholder.com/100x100?text=Provider",
-        },
-        {
-          id: 2,
-          name: "Maria Santos",
-          category: "Cleaning",
-          rating: 4.9,
-          reviews: 89,
-          image: "https://via.placeholder.com/100x100?text=Provider",
-        },
-      ],
-      payments: [
-        {
-          id: 1,
-          date: "Oct 12, 2025",
-          service: "House Cleaning",
-          provider: "Maria Santos",
-          amount: 1200,
-          status: "completed",
-        },
-        {
-          id: 2,
-          date: "Oct 8, 2025",
-          service: "Plumbing Repair",
-          provider: "Juan dela Cruz",
-          amount: 800,
-          status: "completed",
-        },
-      ],
-      messages: [
-        {
-          id: 1,
-          name: "Juan dela Cruz",
-          avatar: "https://via.placeholder.com/50x50?text=JD",
-          lastMessage: "I'll arrive at 2 PM as scheduled",
-          time: "10 mins ago",
-          unread: 1,
-        },
-        {
-          id: 2,
-          name: "Maria Santos",
-          avatar: "https://via.placeholder.com/50x50?text=MS",
-          lastMessage: "Thank you for the booking!",
-          time: "2 hours ago",
-          unread: 0,
-        },
-      ],
+      user: null,
+      bookings: [],
+      favorites: [],
+      loading: false,
+      error: null,
     };
   },
   computed: {
@@ -396,32 +311,75 @@ export default {
     },
   },
   methods: {
-    cancelBooking(id) {
-      if (confirm("Are you sure you want to cancel this booking?")) {
-        console.log("Cancelling booking:", id);
+    async fetchBookings() {
+      this.loading = true;
+      try {
+        const user = this.$store.getters.currentUser;
+        const role = user.role === "provider" ? "provider" : "customer";
+
+        const response = await bookingAPI.getAll({ role });
+        this.bookings = response.data.bookings;
+      } catch (error) {
+        console.error("Error fetching bookings:", error);
+        this.error = "Failed to load bookings";
+      } finally {
+        this.loading = false;
       }
     },
-    completeBooking(id) {
-      console.log("Completing booking:", id);
+
+    async fetchFavorites() {
+      try {
+        const response = await providerAPI.getFavorites();
+        this.favorites = response.data.providers;
+      } catch (error) {
+        console.error("Error fetching favorites:", error);
+      }
     },
+
+    async updateBookingStatus(bookingId, status) {
+      try {
+        await bookingAPI.update(bookingId, { status });
+        await this.fetchBookings();
+      } catch (error) {
+        console.error("Error updating booking:", error);
+        alert(error.response?.data?.message || "Failed to update booking");
+      }
+    },
+
+    async cancelBooking(bookingId) {
+      if (!confirm("Are you sure you want to cancel this booking?")) return;
+      try {
+        await bookingAPI.cancel(bookingId);
+        await this.fetchBookings();
+      } catch (error) {
+        console.error("Error canceling booking:", error);
+        alert(error.response?.data?.message || "Failed to cancel booking");
+      }
+    },
+
     reviewService(booking) {
       this.$router.push({
         name: "ReviewPage",
-        params: { bookingId: booking.id },
+        params: { bookingId: booking._id },
       });
     },
-    viewBookingDetails(id) {
-      console.log("Viewing booking:", id);
-    },
+
     viewProvider(id) {
       this.$router.push({ name: "ProviderProfile", params: { id } });
     },
+
     bookProvider(id) {
       this.$router.push({ name: "Booking", params: { providerId: id } });
     },
+
     openMessage(id) {
       this.$router.push({ name: "Messages", params: { conversationId: id } });
     },
+  },
+  mounted() {
+    this.user = this.$store.getters.currentUser;
+    this.fetchBookings();
+    this.fetchFavorites();
   },
 };
 </script>

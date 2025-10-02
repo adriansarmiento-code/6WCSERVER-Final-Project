@@ -153,6 +153,7 @@
 <script>
 import AppHeader from "@/components/layout/AppHeader.vue";
 import AppFooter from "@/components/layout/AppFooter.vue";
+import { providerAPI, reviewAPI } from "@/services/api";
 
 export default {
   name: "ProviderProfilePage",
@@ -162,117 +163,52 @@ export default {
   },
   data() {
     return {
-      reviewFilter: "all",
-      provider: {
-        id: 1,
-        name: "Juan dela Cruz",
-        category: "Plumbing Services",
-        image: "https://via.placeholder.com/400x400?text=Provider+Photo",
-        rating: 4.8,
-        reviewCount: 127,
-        completedJobs: 342,
-        yearsExperience: 10,
-        responseTime: "< 1 hour",
-        hourlyRate: 500,
-        verified: true,
-        about:
-          "With over 10 years of experience in residential and commercial plumbing, I specialize in fixing leaks, installing fixtures, and maintaining plumbing systems. I pride myself on punctuality, cleanliness, and quality workmanship. Licensed and insured professional ready to help with all your plumbing needs.",
-        services: [
-          {
-            id: 1,
-            name: "Emergency Leak Repair",
-            description: "Fast response for urgent plumbing leaks",
-            price: 800,
-          },
-          {
-            id: 2,
-            name: "Fixture Installation",
-            description: "Install sinks, faucets, toilets, and showers",
-            price: 1200,
-          },
-          {
-            id: 3,
-            name: "Drain Cleaning",
-            description: "Clear clogged drains and pipes",
-            price: 600,
-          },
-          {
-            id: 4,
-            name: "Water Heater Service",
-            description: "Installation and repair of water heaters",
-            price: 1500,
-          },
-        ],
-        skills: [
-          "Pipe Repair",
-          "Fixture Installation",
-          "Drain Cleaning",
-          "Water Heater Expert",
-          "Emergency Service",
-          "Licensed Plumber",
-          "Residential",
-          "Commercial",
-        ],
-        availability: [
-          { day: "Monday", hours: "8:00 AM - 6:00 PM" },
-          { day: "Tuesday", hours: "8:00 AM - 6:00 PM" },
-          { day: "Wednesday", hours: "8:00 AM - 6:00 PM" },
-          { day: "Thursday", hours: "8:00 AM - 6:00 PM" },
-          { day: "Friday", hours: "8:00 AM - 6:00 PM" },
-          { day: "Saturday", hours: "9:00 AM - 4:00 PM" },
-          { day: "Sunday", hours: "Closed" },
-        ],
-        reviews: [
-          {
-            id: 1,
-            userName: "Maria Santos",
-            rating: 5,
-            date: "2 weeks ago",
-            comment:
-              "Excellent service! Fixed my kitchen sink leak quickly and professionally. Very clean work and reasonable prices. Highly recommend!",
-            response: "Thank you for your kind words! Happy to help anytime.",
-          },
-          {
-            id: 2,
-            userName: "Pedro Garcia",
-            rating: 5,
-            date: "1 month ago",
-            comment:
-              "Very professional and punctual. Installed our new bathroom fixtures perfectly. Will definitely use his services again.",
-            response: null,
-          },
-          {
-            id: 3,
-            userName: "Ana Reyes",
-            rating: 4,
-            date: "2 months ago",
-            comment:
-              "Good work overall. Took a bit longer than expected but the result was great. Fair pricing.",
-            response:
-              "Thank you for the feedback. I apologize for the delay - the pipes required extra work. Glad you're satisfied with the result!",
-          },
-        ],
-      },
+      provider: null, // ✅ real provider data from API
+      reviews: [], // ✅ reviews from API
+      reviewFilter: "all", // keep your filter option
+      loading: true,
+      error: null,
     };
   },
   methods: {
+    async fetchProviderData() {
+      try {
+        const providerId = this.$route.params.id;
+
+        // ✅ Fetch provider details
+        const providerResponse = await providerAPI.getById(providerId);
+        this.provider = providerResponse.data;
+
+        // ✅ Fetch provider reviews
+        const reviewsResponse = await reviewAPI.getProviderReviews(providerId);
+        this.reviews = reviewsResponse.data.reviews;
+
+        this.loading = false;
+      } catch (error) {
+        console.error("Error fetching provider:", error);
+        this.error = "Failed to load provider details";
+        this.loading = false;
+      }
+    },
+
     bookNow() {
+      if (!this.provider) return;
       this.$router.push({
         name: "Booking",
-        params: { providerId: this.provider.id },
+        params: { providerId: this.provider._id },
       });
     },
+
     sendMessage() {
+      if (!this.provider) return;
       this.$router.push({
         name: "Messages",
-        query: { provider: this.provider.id },
+        query: { provider: this.provider._id },
       });
     },
   },
   mounted() {
-    // In real app, fetch provider data based on route params
-    const providerId = this.$route.params.id;
-    console.log("Loading provider:", providerId);
+    this.fetchProviderData(); // ✅ fetch real data on mount
   },
 };
 </script>

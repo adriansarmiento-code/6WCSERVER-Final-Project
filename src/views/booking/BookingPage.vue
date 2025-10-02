@@ -226,6 +226,7 @@
 <script>
 import AppHeader from "@/components/layout/AppHeader.vue";
 import AppFooter from "@/components/layout/AppFooter.vue";
+import { providerAPI, bookingAPI } from "@/services/api";
 
 export default {
   name: "BookingPage",
@@ -235,46 +236,19 @@ export default {
   },
   data() {
     return {
-      provider: {
-        id: 1,
-        name: "Juan dela Cruz",
-        category: "Plumbing Services",
-        image: "https://via.placeholder.com/80x80?text=Provider",
-        rating: 4.8,
-        reviewCount: 127,
-        services: [
-          {
-            id: 1,
-            name: "Emergency Leak Repair",
-            description: "Fast response for urgent plumbing leaks",
-            price: 800,
-          },
-          {
-            id: 2,
-            name: "Fixture Installation",
-            description: "Install sinks, faucets, toilets, and showers",
-            price: 1200,
-          },
-          {
-            id: 3,
-            name: "Drain Cleaning",
-            description: "Clear clogged drains and pipes",
-            price: 600,
-          },
-        ],
-      },
-      selectedService: null,
+      provider: null, // ✅ fetched from API
+      selectedService: null, // selected service object
       bookingData: {
-        date: "",
-        time: "",
+        scheduledDate: "",
+        scheduledTime: "",
         address: "",
+        contactPhone: "",
+        contactEmail: "",
         notes: "",
-        phone: "",
-        email: "",
       },
       agreedToTerms: false,
-      isLoading: false,
-      errorMessage: "",
+      loading: false,
+      error: null,
     };
   },
   computed: {
@@ -283,24 +257,19 @@ export default {
       tomorrow.setDate(tomorrow.getDate() + 1);
       return tomorrow.toISOString().split("T")[0];
     },
-    selectedServiceData() {
-      return this.provider.services.find((s) => s.id === this.selectedService);
-    },
-    selectedServiceName() {
-      return this.selectedServiceData?.name || "Not selected";
-    },
-    selectedServicePrice() {
-      return this.selectedServiceData?.price || 0;
-    },
     platformFee() {
-      return Math.round(this.selectedServicePrice * 0.1);
+      return this.selectedService
+        ? Math.round(this.selectedService.price * 0.1)
+        : 0;
     },
     totalAmount() {
-      return this.selectedServicePrice + this.platformFee;
+      return this.selectedService
+        ? this.selectedService.price + this.platformFee
+        : 0;
     },
     formattedDate() {
-      if (!this.bookingData.date) return "Not selected";
-      const date = new Date(this.bookingData.date);
+      if (!this.bookingData.scheduledDate) return "Not selected";
+      const date = new Date(this.bookingData.scheduledDate);
       return date.toLocaleDateString("en-US", {
         weekday: "long",
         year: "numeric",
@@ -309,47 +278,74 @@ export default {
       });
     },
     formattedTime() {
-      if (!this.bookingData.time) return "Not selected";
-      return this.bookingData.time;
+      return this.bookingData.scheduledTime || "Not selected";
     },
     isFormValid() {
       return (
         this.selectedService &&
-        this.bookingData.date &&
-        this.bookingData.time &&
+        this.bookingData.scheduledDate &&
+        this.bookingData.scheduledTime &&
         this.bookingData.address &&
-        this.bookingData.phone &&
-        this.bookingData.email &&
+        this.bookingData.contactPhone &&
+        this.bookingData.contactEmail &&
         this.agreedToTerms
       );
     },
   },
   methods: {
+    async fetchProvider() {
+      try {
+        const providerId = this.$route.params.providerId;
+        const response = await providerAPI.getById(providerId);
+        this.provider = response.data;
+
+        // ✅ Pre-fill contact info from logged-in user
+        const user = this.$store.getters.currentUser;
+        if (user) {
+          this.bookingData.contactPhone = user.phone;
+          this.bookingData.contactEmail = user.email;
+        }
+      } catch (error) {
+        console.error("Error fetching provider:", error);
+        this.error = "Failed to load provider details";
+      }
+    },
+
     async handleBooking() {
-      this.errorMessage = "";
-      this.isLoading = true;
+      this.loading = true;
+      this.error = null;
 
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        // Redirect to payment simulation
-        this.$router.push({
-          name: "PaymentSimulation",
-          params: {
-            bookingId: "BOOK-" + Date.now(),
+        const bookingPayload = {
+          providerId: this.provider._id,
+          service: {
+            name: this.selectedService.name,
+            price: this.selectedService.price,
+            description: this.selectedService.description,
           },
-        });
+          scheduledDate: this.bookingData.scheduledDate,
+          scheduledTime: this.bookingData.scheduledTime,
+          address: this.bookingData.address,
+          contactPhone: this.bookingData.contactPhone,
+          contactEmail: this.bookingData.contactEmail,
+          notes: this.bookingData.notes,
+        };
+
+        const response = await bookingAPI.create(bookingPayload);
+
+        // ✅ Redirect to real payment page with booking ID
+        this.$router.push(`/payment/${response.data._id}`);
       } catch (error) {
-        this.errorMessage = "Failed to process booking. Please try again.";
+        console.error("Error creating booking:", error);
+        this.error =
+          error.response?.data?.message || "Failed to create booking";
       } finally {
-        this.isLoading = false;
+        this.loading = false;
       }
     },
   },
   mounted() {
-    const providerId = this.$route.params.providerId;
-    console.log("Booking for provider:", providerId);
+    this.fetchProvider(); // ✅ fetch provider when page loads
   },
 };
 </script>

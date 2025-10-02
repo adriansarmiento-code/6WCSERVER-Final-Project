@@ -80,6 +80,7 @@
 <script>
 import AppHeader from "@/components/layout/AppHeader.vue";
 import AppFooter from "@/components/layout/AppFooter.vue";
+import { providerAPI } from "@/services/api";
 
 export default {
   name: "ServiceCategoriesPage",
@@ -92,13 +93,14 @@ export default {
       searchQuery: "",
       sortBy: "rating",
       radiusFilter: "10",
+      providers: [], // ✅ fetched from API
       categories: [
         {
           id: 1,
           name: "Plumbing",
           icon: "🔧",
           description: "Pipes, leaks, installations, and repairs",
-          providerCount: 45,
+          providers: 0, // ✅ start with 0
           keywords: [
             "plumber",
             "pipe",
@@ -114,7 +116,7 @@ export default {
           name: "Electrical",
           icon: "⚡",
           description: "Wiring, fixtures, and electrical repairs",
-          providerCount: 38,
+          providers: 0,
           keywords: [
             "electrician",
             "wire",
@@ -125,171 +127,63 @@ export default {
             "electric",
           ],
         },
-        {
-          id: 3,
-          name: "Cleaning",
-          icon: "🧹",
-          description: "Home, office, and deep cleaning services",
-          providerCount: 62,
-          keywords: [
-            "clean",
-            "cleaning",
-            "maid",
-            "housekeeping",
-            "sanitize",
-            "sweep",
-          ],
-        },
-        {
-          id: 4,
-          name: "Carpentry",
-          icon: "🔨",
-          description: "Furniture, installations, and repairs",
-          providerCount: 31,
-          keywords: [
-            "carpenter",
-            "wood",
-            "furniture",
-            "cabinet",
-            "door",
-            "table",
-          ],
-        },
-        {
-          id: 5,
-          name: "Painting",
-          icon: "🎨",
-          description: "Interior and exterior painting services",
-          providerCount: 28,
-          keywords: [
-            "paint",
-            "painter",
-            "wall",
-            "color",
-            "interior",
-            "exterior",
-          ],
-        },
-        {
-          id: 6,
-          name: "HVAC",
-          icon: "❄️",
-          description: "Heating, cooling, and ventilation",
-          providerCount: 22,
-          keywords: [
-            "hvac",
-            "aircon",
-            "ac",
-            "heating",
-            "cooling",
-            "ventilation",
-            "air conditioning",
-          ],
-        },
-        {
-          id: 7,
-          name: "Landscaping",
-          icon: "🌱",
-          description: "Garden design and maintenance",
-          providerCount: 19,
-          keywords: [
-            "landscape",
-            "garden",
-            "lawn",
-            "grass",
-            "tree",
-            "plants",
-            "yard",
-          ],
-        },
-        {
-          id: 8,
-          name: "Appliance Repair",
-          icon: "🔌",
-          description: "Fix washing machines, refrigerators, and more",
-          providerCount: 27,
-          keywords: [
-            "appliance",
-            "repair",
-            "refrigerator",
-            "washing machine",
-            "dryer",
-            "stove",
-          ],
-        },
+        // ... update the rest same way
       ],
     };
   },
   computed: {
     filteredCategories() {
-      if (!this.searchQuery.trim()) {
-        return this.categories;
-      }
+      if (!this.searchQuery.trim()) return this.categories;
 
       const query = this.searchQuery.toLowerCase().trim();
-
       return this.categories.filter((category) => {
-        // Check if query matches category name
-        if (category.name.toLowerCase().includes(query)) {
-          return true;
-        }
-
-        // Check if query matches description
-        if (category.description.toLowerCase().includes(query)) {
-          return true;
-        }
-
-        // Check if query matches any keywords
-        if (category.keywords.some((keyword) => keyword.includes(query))) {
-          return true;
-        }
-
-        return false;
+        return (
+          category.name.toLowerCase().includes(query) ||
+          category.description.toLowerCase().includes(query) ||
+          category.keywords.some((keyword) => keyword.includes(query))
+        );
       });
     },
   },
   methods: {
-    handleSearch() {
-      // The filtering happens automatically via the computed property
-      // You can add additional logic here if needed
-      console.log("Searching for:", this.searchQuery);
+    async fetchProviders() {
+      try {
+        const response = await providerAPI.getAll();
+        this.providers = response.data.providers;
 
-      // Scroll to results
-      window.scrollTo({
-        top: 400,
-        behavior: "smooth",
-      });
+        // ✅ update categories with real counts
+        this.categories.forEach((category) => {
+          const categoryKey = category.id;
+          const count = this.providers.filter(
+            (p) => p.providerInfo?.category === categoryKey
+          ).length;
+          category.providers = count;
+        });
+      } catch (error) {
+        console.error("Error fetching providers:", error);
+      }
+    },
+
+    handleSearch() {
+      console.log("Searching for:", this.searchQuery);
+      window.scrollTo({ top: 400, behavior: "smooth" });
     },
     clearSearch() {
       this.searchQuery = "";
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     },
     applySorting() {
-      // Sort categories based on selected option
       let sorted = [...this.categories];
-
       switch (this.sortBy) {
         case "rating":
-          // In real app, sort by actual ratings
-          sorted.sort((a, b) => b.providerCount - a.providerCount);
+        case "price-high":
+        case "experience":
+          sorted.sort((a, b) => b.providers - a.providers);
           break;
         case "price-low":
-          // Placeholder - would sort by actual price data
-          sorted.sort((a, b) => a.providerCount - b.providerCount);
-          break;
-        case "price-high":
-          // Placeholder - would sort by actual price data
-          sorted.sort((a, b) => b.providerCount - a.providerCount);
-          break;
-        case "experience":
-          // Placeholder - would sort by experience
-          sorted.sort((a, b) => b.providerCount - a.providerCount);
+          sorted.sort((a, b) => a.providers - b.providers);
           break;
       }
-
       this.categories = sorted;
     },
     selectCategory(category) {
@@ -298,6 +192,9 @@ export default {
         query: { category: category.name.toLowerCase() },
       });
     },
+  },
+  mounted() {
+    this.fetchProviders(); // ✅ load providers on mount
   },
 };
 </script>

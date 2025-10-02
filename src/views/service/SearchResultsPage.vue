@@ -158,6 +158,7 @@
 <script>
 import AppHeader from "@/components/layout/AppHeader.vue";
 import AppFooter from "@/components/layout/AppFooter.vue";
+import { providerAPI } from "@/services/api";
 
 export default {
   name: "SearchResultsPage",
@@ -167,7 +168,7 @@ export default {
   },
   data() {
     return {
-      categoryName: "Plumbing",
+      categoryName: "Plumbing", // will be replaced by query param
       sortBy: "rating",
       filters: {
         radius: "10",
@@ -176,69 +177,14 @@ export default {
         minRating: "0",
         verifiedOnly: false,
       },
-      providers: [
-        {
-          id: 1,
-          name: "Juan dela Cruz",
-          category: "Plumbing",
-          description:
-            "Expert in residential and commercial plumbing with 10+ years experience",
-          hourlyRate: 500,
-          rating: 4.8,
-          reviewCount: 127,
-          yearsExperience: 10,
-          distance: 3.2,
-          verified: true,
-          image: "https://via.placeholder.com/300x200?text=Provider+1",
-        },
-        {
-          id: 2,
-          name: "Maria Santos",
-          category: "Plumbing",
-          description:
-            "Specializing in pipe repairs and bathroom installations",
-          hourlyRate: 450,
-          rating: 4.9,
-          reviewCount: 89,
-          yearsExperience: 8,
-          distance: 5.1,
-          verified: true,
-          image: "https://via.placeholder.com/300x200?text=Provider+2",
-        },
-        {
-          id: 3,
-          name: "Pedro Reyes",
-          category: "Plumbing",
-          description: "Quick response for emergency plumbing services",
-          hourlyRate: 550,
-          rating: 4.7,
-          reviewCount: 156,
-          yearsExperience: 12,
-          distance: 7.3,
-          verified: true,
-          image: "https://via.placeholder.com/300x200?text=Provider+3",
-        },
-        {
-          id: 4,
-          name: "Ana Garcia",
-          category: "Plumbing",
-          description: "Affordable and reliable plumbing services",
-          hourlyRate: 400,
-          rating: 4.6,
-          reviewCount: 64,
-          yearsExperience: 6,
-          distance: 4.8,
-          verified: false,
-          image: "https://via.placeholder.com/300x200?text=Provider+4",
-        },
-      ],
+      providers: [], // ✅ now starts empty, filled from API
     };
   },
   computed: {
     filteredProviders() {
       let results = [...this.providers];
 
-      // Apply filters
+      // ✅ Apply client-side filters
       if (this.filters.verifiedOnly) {
         results = results.filter((p) => p.verified);
       }
@@ -261,14 +207,34 @@ export default {
     },
   },
   methods: {
+    async fetchProviders() {
+      try {
+        // ✅ build params from filters + route query
+        const params = {
+          category: this.$route.query.category,
+          minRating: this.filters.minRating || undefined,
+          verified: this.filters.verifiedOnly ? "true" : undefined,
+          sort: this.sortBy,
+        };
+
+        const response = await providerAPI.getAll(params);
+        this.providers = response.data.providers;
+
+        this.applyFilters();
+      } catch (error) {
+        console.error("Error fetching providers:", error);
+      }
+    },
+
     applyFilters() {
-      // Filters are applied through computed property
+      // Already handled via computed property
       console.log("Filters applied");
     },
-    sortProviders() {
-      // Sorting logic will be implemented
-      console.log("Sorting by:", this.sortBy);
+
+    updateSort() {
+      this.fetchProviders(); // ✅ re-fetch providers when sorting changes
     },
+
     viewProvider(id) {
       this.$router.push({ name: "ProviderProfile", params: { id } });
     },
@@ -280,11 +246,13 @@ export default {
     },
   },
   mounted() {
-    // Get category from query params
+    // ✅ set category name from query params
     const category = this.$route.query.category;
     if (category) {
       this.categoryName = category.charAt(0).toUpperCase() + category.slice(1);
     }
+
+    this.fetchProviders(); // ✅ load providers on mount
   },
 };
 </script>

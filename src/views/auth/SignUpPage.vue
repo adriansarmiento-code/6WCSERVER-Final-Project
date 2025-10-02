@@ -143,6 +143,7 @@
 
 <script>
 import AppHeader from "@/components/layout/AppHeader.vue";
+import { authAPI } from "@/services/api";
 
 export default {
   name: "SignUpPage",
@@ -151,7 +152,7 @@ export default {
   },
   data() {
     return {
-      userType: "customer",
+      userType: "customer", // Default value
       formData: {
         fullName: "",
         email: "",
@@ -185,14 +186,31 @@ export default {
       this.isLoading = true;
 
       try {
-        // Simulate API call (replace with actual registration later)
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        // Store user in Vuex
-        this.$store.dispatch("login", {
-          email: this.formData.email,
+        // Build user data object
+        const userData = {
           name: this.formData.fullName,
-          userType: this.userType,
+          email: this.formData.email,
+          phone: this.formData.phone,
+          password: this.formData.password,
+          role: this.userType,
+        };
+
+        // Add provider-specific info if user is registering as provider
+        if (this.userType === "provider") {
+          userData.providerInfo = {
+            category: this.formData.category || "other",
+            yearsExperience: parseInt(this.formData.experience) || 0,
+            hourlyRate: 0, // Can be updated later in profile
+          };
+        }
+
+        // Call the real API
+        const response = await authAPI.register(userData);
+
+        // Store user and token in Vuex
+        this.$store.dispatch("login", {
+          user: response.data,
+          token: response.data.token,
         });
 
         // Redirect based on user type
@@ -202,11 +220,23 @@ export default {
           this.$router.push("/dashboard");
         }
       } catch (error) {
-        this.errorMessage = "An error occurred. Please try again.";
+        // Display backend error message or generic error
+        this.errorMessage =
+          error.response?.data?.message ||
+          "Registration failed. Please try again.";
+        console.error("Registration error:", error);
       } finally {
         this.isLoading = false;
       }
     },
+  },
+
+  mounted() {
+    // Check if 'type=provider' is in the URL query
+    const userType = this.$route.query.type;
+    if (userType === "provider") {
+      this.userType = "provider";
+    }
   },
 };
 </script>

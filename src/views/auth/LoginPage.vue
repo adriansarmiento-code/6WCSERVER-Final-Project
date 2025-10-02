@@ -67,6 +67,7 @@
 
 <script>
 import AppHeader from "@/components/layout/AppHeader.vue";
+import { authAPI } from "@/services/api";
 
 export default {
   name: "LoginPage",
@@ -90,19 +91,20 @@ export default {
       this.errorMessage = "";
 
       try {
-        // Simulate API call (replace with actual authentication later)
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Store user in Vuex
-        this.$store.dispatch("login", {
+        const response = await authAPI.login({
           email: this.formData.email,
-          name: "Test User",
+          password: this.formData.password,
         });
 
-        // Redirect to dashboard
+        this.$store.dispatch("login", {
+          user: response.data,
+          token: response.data.token,
+        });
+
         this.$router.push("/dashboard");
       } catch (error) {
-        this.errorMessage = "Invalid email or password. Please try again.";
+        this.errorMessage =
+          error.response?.data?.message || "Login failed. Please try again.";
       } finally {
         this.isLoading = false;
       }
