@@ -32,7 +32,7 @@
             </p>
           </div>
           <div class="mission-image">
-            <img src="@/assets/images/missionimage.jpg" alt="Fixify Mission" />
+            <img src="@/assets/images/mission.jpg" alt="Fixify Mission" />
           </div>
         </div>
       </div>

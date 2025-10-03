@@ -10,23 +10,74 @@
           />
           <h1>Fixify</h1>
         </router-link>
-        <nav class="nav">
-          <router-link to="/" class="nav-link">Home</router-link>
-          <router-link to="/services" class="nav-link">Services</router-link>
-          <router-link to="/about" class="nav-link">About</router-link>
-          <router-link to="/login" class="nav-link nav-link-login"
+
+        <!-- Hamburger Button (Mobile Only) -->
+        <button
+          class="hamburger"
+          @click="toggleMenu"
+          :class="{ active: isMenuOpen }"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <!-- Navigation Menu -->
+        <nav class="nav" :class="{ open: isMenuOpen }">
+          <router-link to="/" class="nav-link" @click="closeMenu"
+            >Home</router-link
+          >
+          <router-link to="/services" class="nav-link" @click="closeMenu"
+            >Services</router-link
+          >
+          <router-link to="/about" class="nav-link" @click="closeMenu"
+            >About</router-link
+          >
+          <router-link
+            to="/login"
+            class="nav-link nav-link-login"
+            @click="closeMenu"
             >Login</router-link
           >
-          <router-link to="/signup" class="btn btn-header">Sign Up</router-link>
+          <router-link to="/signup" class="btn btn-header" @click="closeMenu"
+            >Sign Up</router-link
+          >
         </nav>
       </div>
     </div>
+
+    <!-- Mobile Overlay -->
+    <div v-if="isMenuOpen" class="overlay" @click="closeMenu"></div>
   </header>
 </template>
 
 <script>
 export default {
   name: "AppHeader",
+  data() {
+    return {
+      isMenuOpen: false,
+    };
+  },
+  methods: {
+    toggleMenu() {
+      this.isMenuOpen = !this.isMenuOpen;
+      // Prevent body scroll when menu is open
+      if (this.isMenuOpen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "";
+      }
+    },
+    closeMenu() {
+      this.isMenuOpen = false;
+      document.body.style.overflow = "";
+    },
+  },
+  beforeUnmount() {
+    // Clean up body overflow on component unmount
+    document.body.style.overflow = "";
+  },
 };
 </script>
 
@@ -50,23 +101,20 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 0;
+  position: relative;
 }
 
 .logo {
+  text-decoration: none;
+  z-index: 1001;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  text-decoration: none;
-  transition: transform 0.3s ease;
-}
-
-.logo:hover {
-  transform: scale(1.02);
+  gap: 12px;
 }
 
 .logo-image {
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
 }
 
@@ -79,6 +127,42 @@ export default {
   background-clip: text;
 }
 
+/* Hamburger Menu Button */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 25px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+}
+
+.hamburger span {
+  width: 100%;
+  height: 3px;
+  background: #2d3748;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+.hamburger.active span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+/* Navigation */
 .nav {
   display: flex;
   gap: 2rem;
@@ -115,10 +199,20 @@ export default {
   transform: translateY(-2px);
 }
 
+/* Mobile Overlay */
+.overlay {
+  display: none;
+}
+
+/* Mobile Styles */
 @media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+  }
+
   .logo-image {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
   }
 
   .logo h1 {
@@ -126,7 +220,72 @@ export default {
   }
 
   .nav {
-    display: none;
+    position: fixed;
+    top: 0;
+    right: -100%;
+    height: 100vh;
+    width: 280px;
+    background: white;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 6rem 2rem 2rem;
+    gap: 1.5rem;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+    transition: right 0.3s ease;
+    z-index: 1000;
+  }
+
+  .nav.open {
+    right: 0;
+  }
+
+  .nav-link,
+  .btn-header {
+    width: 100%;
+    text-align: center;
+    padding: 12px 24px;
+    font-size: 1.1rem;
+  }
+
+  .btn-header {
+    margin-top: 1rem;
+  }
+
+  .overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* Tablet Styles */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .nav {
+    gap: 1rem;
+  }
+
+  .nav-link {
+    font-size: 0.95rem;
+  }
+
+  .btn-header {
+    padding: 8px 18px;
+    font-size: 0.95rem;
   }
 }
 </style>
