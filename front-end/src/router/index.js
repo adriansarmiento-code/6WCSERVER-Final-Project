@@ -52,9 +52,16 @@ const routes = [
     component: BookingPage,
   },
   {
+    path: "/provider-dashboard",
+    name: "ProviderDashboard",
+    component: () => import("@/views/user/ProviderDashboard.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/dashboard",
     name: "Dashboard",
     component: DashboardPage,
+    meta: { requiresAuth: true },
   },
   {
     path: "/payment/:bookingId",
@@ -116,6 +123,18 @@ const router = createRouter({
     // Otherwise, always scroll to top
     return { top: 0, behavior: "smooth" };
   },
+});
+
+router.beforeEach((to, from, next) => {
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+  const isAuthenticated = store.getters.isAuthenticated;
+
+  if (requiresAuth && !isAuthenticated) {
+    // Redirect to login if trying to access protected route
+    next("/login");
+  } else {
+    next();
+  }
 });
 
 export default router;

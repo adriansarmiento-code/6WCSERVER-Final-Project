@@ -33,15 +33,36 @@
           <router-link to="/about" class="nav-link" @click="closeMenu"
             >About</router-link
           >
-          <router-link
-            to="/login"
-            class="nav-link nav-link-login"
-            @click="closeMenu"
-            >Login</router-link
-          >
-          <router-link to="/signup" class="btn btn-header" @click="closeMenu"
-            >Sign Up</router-link
-          >
+
+          <!-- Show different links based on auth status -->
+          <template v-if="!isAuthenticated">
+            <router-link
+              to="/login"
+              class="nav-link nav-link-login"
+              @click="closeMenu"
+              >Login</router-link
+            >
+            <router-link to="/signup" class="btn btn-header" @click="closeMenu"
+              >Sign Up</router-link
+            >
+          </template>
+
+          <template v-else>
+            <router-link
+              :to="
+                currentUser?.role === 'provider'
+                  ? '/provider-dashboard'
+                  : '/dashboard'
+              "
+              class="nav-link"
+              @click="closeMenu"
+            >
+              Dashboard
+            </router-link>
+            <button @click="handleLogout" class="btn btn-header btn-logout">
+              Logout
+            </button>
+          </template>
         </nav>
       </div>
     </div>
@@ -59,10 +80,17 @@ export default {
       isMenuOpen: false,
     };
   },
+  computed: {
+    isAuthenticated() {
+      return this.$store.getters.isAuthenticated;
+    },
+    currentUser() {
+      return this.$store.getters.currentUser;
+    },
+  },
   methods: {
     toggleMenu() {
       this.isMenuOpen = !this.isMenuOpen;
-      // Prevent body scroll when menu is open
       if (this.isMenuOpen) {
         document.body.style.overflow = "hidden";
       } else {
@@ -73,9 +101,12 @@ export default {
       this.isMenuOpen = false;
       document.body.style.overflow = "";
     },
+    handleLogout() {
+      this.$store.dispatch("logout");
+      this.$router.push("/");
+    },
   },
   beforeUnmount() {
-    // Clean up body overflow on component unmount
     document.body.style.overflow = "";
   },
 };
@@ -88,6 +119,21 @@ export default {
   position: sticky;
   top: 0;
   z-index: 1000;
+}
+.btn-logout {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+  background-color: #5a67d8;
+  transform: translateY(-2px);
 }
 
 .container {

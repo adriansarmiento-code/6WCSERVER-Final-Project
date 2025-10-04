@@ -12,12 +12,22 @@
             plumbing, electrical, cleaning, and more
           </p>
           <div class="hero-buttons">
-            <router-link to="/signup" class="btn btn-primary"
-              >Get Started</router-link
-            >
-            <router-link to="/services" class="btn btn-secondary"
-              >Browse Services</router-link
-            >
+            <template v-if="!isAuthenticated">
+              <router-link to="/signup" class="btn btn-primary"
+                >Get Started</router-link
+              >
+              <router-link to="/services" class="btn btn-secondary"
+                >Browse Services</router-link
+              >
+            </template>
+            <template v-else>
+              <button @click="navigateToDashboard" class="btn btn-primary">
+                Go to Dashboard
+              </button>
+              <router-link to="/services" class="btn btn-secondary"
+                >Browse Services</router-link
+              >
+            </template>
           </div>
         </div>
         <div class="hero-image">
@@ -140,8 +150,8 @@
       </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="cta">
+    <!-- CTA Section - only show if not logged in -->
+    <section v-if="!isAuthenticated" class="cta">
       <div class="container">
         <div class="cta-content">
           <h2>Ready to Get Started?</h2>
@@ -164,6 +174,27 @@
       </div>
     </section>
 
+    <!-- Alternative CTA for logged-in users -->
+    <section v-else class="cta">
+      <div class="container">
+        <div class="cta-content">
+          <h2>Welcome back, {{ currentUser?.name }}!</h2>
+          <p>Ready to book a service or manage your account?</p>
+          <div class="cta-buttons">
+            <button
+              @click="navigateToDashboard"
+              class="btn btn-primary btn-large"
+            >
+              Go to Dashboard
+            </button>
+            <router-link to="/services" class="btn btn-outline btn-large">
+              Browse Services
+            </router-link>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <AppFooter />
   </div>
 </template>
@@ -177,6 +208,23 @@ export default {
   components: {
     AppHeader,
     AppFooter,
+  },
+  computed: {
+    isAuthenticated() {
+      return this.$store.getters.isAuthenticated;
+    },
+    currentUser() {
+      return this.$store.getters.currentUser;
+    },
+  },
+  methods: {
+    navigateToDashboard() {
+      if (this.currentUser?.role === "provider") {
+        this.$router.push("/provider-dashboard");
+      } else {
+        this.$router.push("/dashboard");
+      }
+    },
   },
 };
 </script>

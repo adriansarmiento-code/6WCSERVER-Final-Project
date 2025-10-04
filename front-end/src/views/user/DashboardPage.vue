@@ -5,7 +5,7 @@
     <div class="container">
       <div class="dashboard-header">
         <div>
-          <h1>Welcome back, {{ user.name }}!</h1>
+          <h1>Welcome back, {{ currentUser.name }}!</h1>
           <p>Manage your bookings and account</p>
         </div>
         <router-link to="/services" class="btn btn-primary">
@@ -105,6 +105,7 @@
                   >
                     View Details
                   </button>
+                  <button @click="handleLogout">Logout</button>
                 </div>
               </div>
 
@@ -216,7 +217,7 @@
                 <h3>Personal Information</h3>
                 <div class="form-group">
                   <label>Full Name</label>
-                  <input type="text" :value="user.name" />
+                  <input type="text" :value="currentUser.name" />
                 </div>
                 <div class="form-group">
                   <label>Email</label>
@@ -265,7 +266,7 @@
 <script>
 import AppHeader from "@/components/layout/AppHeader.vue";
 import AppFooter from "@/components/layout/AppFooter.vue";
-import { bookingAPI, providerAPI } from "@/services/api";
+import { bookingAPI, authAPI } from "@/services/api";
 
 export default {
   name: "DashboardPage",
@@ -291,14 +292,18 @@ export default {
         "Completed",
         "Cancelled",
       ],
-      user: null,
       bookings: [],
       favorites: [],
+      payments: [],
       loading: false,
       error: null,
     };
   },
   computed: {
+    currentUser() {
+      return this.$store.getters.currentUser;
+    },
+
     filteredBookings() {
       if (this.bookingFilter === "All") {
         return this.bookings;
@@ -313,10 +318,10 @@ export default {
   methods: {
     async fetchBookings() {
       this.loading = true;
+      this.error = null;
       try {
-        const user = this.$store.getters.currentUser;
-        const role = user.role === "provider" ? "provider" : "customer";
-
+        const role =
+          this.currentUser?.role === "provider" ? "provider" : "customer";
         const response = await bookingAPI.getAll({ role });
         this.bookings = response.data.bookings;
       } catch (error) {
@@ -326,14 +331,15 @@ export default {
         this.loading = false;
       }
     },
+    handleLogout() {
+      this.$store.dispatch("logout");
+      this.$router.push("/login");
+    },
 
     async fetchFavorites() {
-      try {
-        const response = await providerAPI.getFavorites();
-        this.favorites = response.data.providers;
-      } catch (error) {
-        console.error("Error fetching favorites:", error);
-      }
+      // Favorites feature not implemented yet in backend
+      // Will be added later
+      this.favorites = [];
     },
 
     async updateBookingStatus(bookingId, status) {
@@ -365,19 +371,47 @@ export default {
     },
 
     viewProvider(id) {
-      this.$router.push({ name: "ProviderProfile", params: { id } });
+      this.$router.push(`/provider/${id}`);
     },
 
     bookProvider(id) {
-      this.$router.push({ name: "Booking", params: { providerId: id } });
+      this.$router.push(`/booking/${id}`);
     },
 
     openMessage(id) {
-      this.$router.push({ name: "Messages", params: { conversationId: id } });
+      this.$router.push(`/messages/${id}`);
     },
   },
-  mounted() {
-    this.user = this.$store.getters.currentUser;
+
+  async mounted() {
+    // Check if user exists in store
+    const user = this.$store.getters.currentUser;
+
+    if (!user) {
+      // Try to fetch user from API using token
+      const token = this.$store.getters.getToken;
+
+      if (!token) {
+        // No token, redirect to login
+        this.$router.push("/login");
+        return;
+      }
+
+      try {
+        const response = await authAPI.getMe();
+        this.$store.dispatch("login", {
+          user: response.data,
+          token: token,
+        });
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        // Token invalid or expired, redirect to login
+        this.$router.push("/login");
+        return;
+      }
+    }
+
+    // Fetch dashboard data
     this.fetchBookings();
     this.fetchFavorites();
   },

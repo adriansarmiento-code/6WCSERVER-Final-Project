@@ -96,12 +96,27 @@ export default {
           password: this.formData.password,
         });
 
+        console.log("Login response:", response.data);
+        console.log("Token:", response.data.token);
+        console.log("User:", response.data);
+
         this.$store.dispatch("login", {
           user: response.data,
           token: response.data.token,
         });
 
-        this.$router.push("/dashboard");
+        console.log(
+          "After dispatch - currentUser:",
+          this.$store.getters.currentUser
+        );
+        console.log("After dispatch - token:", this.$store.getters.getToken);
+
+        // Redirect based on user role
+        if (response.data.role === "provider") {
+          this.$router.push("/provider-dashboard");
+        } else {
+          this.$router.push("/dashboard");
+        }
       } catch (error) {
         this.errorMessage =
           error.response?.data?.message || "Login failed. Please try again.";
