@@ -5,7 +5,7 @@
     <div class="container">
       <div class="dashboard-header">
         <div>
-          <h1>Welcome back, {{ currentUser.name }}!</h1>
+          <h1>Welcome back, {{ currentUser ? currentUser.name : "Guest" }}!</h1>
           <p>Manage your bookings and account</p>
         </div>
         <router-link to="/services" class="btn btn-primary">
@@ -105,7 +105,6 @@
                   >
                     View Details
                   </button>
-                  <button @click="handleLogout">Logout</button>
                 </div>
               </div>
 
@@ -217,15 +216,24 @@
                 <h3>Personal Information</h3>
                 <div class="form-group">
                   <label>Full Name</label>
-                  <input type="text" :value="currentUser.name" />
+                  <input
+                    type="text"
+                    :value="currentUser ? currentUser.name : ''"
+                  />
                 </div>
                 <div class="form-group">
                   <label>Email</label>
-                  <input type="email" :value="user.email" />
+                  <input
+                    type="email"
+                    :value="currentUser ? currentUser.email : ''"
+                  />
                 </div>
                 <div class="form-group">
                   <label>Phone</label>
-                  <input type="tel" :value="user.phone" />
+                  <input
+                    type="tel"
+                    :value="currentUser ? currentUser.phone : ''"
+                  />
                 </div>
                 <button class="btn btn-primary">Save Changes</button>
               </section>

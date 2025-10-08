@@ -134,7 +134,7 @@
                   </button>
                   <button
                     class="btn btn-primary"
-                    @click.stop="bookProvider(provider.id)"
+                    @click.stop="bookProvider(provider._id)"
                   >
                     Book Now
                   </button>
