@@ -27,11 +27,34 @@ apiClient.interceptors.request.use(
 );
 
 // Auth API calls
+// Auth API calls
 export const authAPI = {
   register: (userData) => apiClient.post("/auth/register", userData),
   login: (credentials) => apiClient.post("/auth/login", credentials),
   getMe: () => apiClient.get("/auth/me"),
   updateProfile: (data) => apiClient.put("/auth/me", data),
+
+  // Base64 upload - converts image to Base64 string
+  uploadProfileImage: async (imageFile) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = async () => {
+        try {
+          const base64String = reader.result;
+          const response = await apiClient.post("/auth/upload-image", {
+            image: base64String,
+          });
+          resolve(response);
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(imageFile);
+    });
+  },
 };
 
 // Provider API calls

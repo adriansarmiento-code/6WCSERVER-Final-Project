@@ -2,147 +2,109 @@
   <div class="provider-profile-page">
     <AppHeader />
 
-    <div class="container">
-      <div class="profile-layout">
-        <!-- Left Column - Provider Info -->
-        <aside class="profile-sidebar">
-          <div class="profile-card">
-            <div class="profile-image">
-              <img :src="provider.image" :alt="provider.name" />
-              <span v-if="provider.verified" class="verified-badge">
-                ✓ Verified Provider
-              </span>
+    <!-- Add loading/error states -->
+    <div v-if="loading" class="loading-container">
+      <p>Loading provider details...</p>
+    </div>
+
+    <div v-else-if="error" class="error-container">
+      <p>{{ error }}</p>
+      <router-link to="/services" class="btn btn-primary"
+        >Back to Services</router-link
+      >
+    </div>
+
+    <!-- Only render if provider exists -->
+    <div v-else-if="provider" class="container">
+      <!-- Provider Header -->
+      <div class="provider-header">
+        <div class="provider-image">
+          <img :src="getProfileImage(provider)" :alt="provider.name" />
+        </div>
+
+        <div class="provider-info">
+          <h1>{{ provider.name }}</h1>
+          <p class="category">{{ provider.providerInfo?.category }}</p>
+
+          <div class="rating">
+            <span class="stars">{{
+              "⭐".repeat(Math.floor(provider.providerInfo?.rating || 0))
+            }}</span>
+            <span class="rating-text">
+              {{ provider.providerInfo?.rating?.toFixed(1) || "New" }}
+              ({{ provider.providerInfo?.reviewCount || 0 }} reviews)
+            </span>
+          </div>
+
+          <div class="provider-stats">
+            <div class="stat">
+              <strong>Experience:</strong>
+              {{ provider.providerInfo?.yearsExperience || 0 }} years
             </div>
-
-            <div class="profile-info">
-              <h1>{{ provider.name }}</h1>
-              <p class="profile-category">{{ provider.category }}</p>
-
-              <div class="profile-rating">
-                <span class="stars">{{
-                  "⭐".repeat(Math.floor(provider.rating))
-                }}</span>
-                <span class="rating-text">
-                  {{ provider.rating }} ({{ provider.reviewCount }} reviews)
-                </span>
-              </div>
-
-              <div class="profile-stats">
-                <div class="stat-item">
-                  <strong>{{ provider.completedJobs }}</strong>
-                  <span>Jobs Completed</span>
-                </div>
-                <div class="stat-item">
-                  <strong>{{ provider.yearsExperience }}</strong>
-                  <span>Years Experience</span>
-                </div>
-                <div class="stat-item">
-                  <strong>{{ provider.responseTime }}</strong>
-                  <span>Response Time</span>
-                </div>
-              </div>
-
-              <div class="profile-price">
-                <span class="price-label">Hourly Rate</span>
-                <span class="price-amount">₱{{ provider.hourlyRate }}/hr</span>
-              </div>
-
-              <div class="profile-actions">
-                <button class="btn btn-primary btn-full" @click="bookNow">
-                  Book Now
-                </button>
-                <button class="btn btn-outline btn-full" @click="sendMessage">
-                  Send Message
-                </button>
-              </div>
+            <div class="stat">
+              <strong>Rate:</strong> ₱{{
+                provider.providerInfo?.hourlyRate || "N/A"
+              }}/hr
+            </div>
+            <div class="stat">
+              <strong>Completed Jobs:</strong>
+              {{ provider.providerInfo?.completedJobs || 0 }}
             </div>
           </div>
 
-          <div class="availability-card">
-            <h3>Availability</h3>
-            <div class="availability-list">
-              <div
-                v-for="day in provider.availability"
-                :key="day.day"
-                class="availability-item"
-              >
-                <span class="day">{{ day.day }}</span>
-                <span class="hours">{{ day.hours }}</span>
-              </div>
-            </div>
+          <div class="action-buttons">
+            <button @click="handleBookNow" class="btn btn-primary">
+              Book Now
+            </button>
+            <button @click="handleContact" class="btn btn-secondary">
+              Contact
+            </button>
           </div>
-        </aside>
+        </div>
+      </div>
 
-        <!-- Right Column - Details and Reviews -->
-        <main class="profile-main">
-          <section class="section">
-            <h2>About</h2>
-            <p class="about-text">{{ provider.about }}</p>
-          </section>
+      <!-- About Section -->
+      <div class="section">
+        <h2>About</h2>
+        <p>{{ provider.providerInfo?.bio || "No bio available" }}</p>
+      </div>
 
-          <section class="section">
-            <h2>Services Offered</h2>
-            <div class="services-list">
-              <div
-                v-for="service in provider.services"
-                :key="service.id"
-                class="service-item"
-              >
-                <h4>{{ service.name }}</h4>
-                <p>{{ service.description }}</p>
-                <span class="service-price">₱{{ service.price }}</span>
-              </div>
+      <!-- Services Section -->
+      <div class="section">
+        <h2>Services Offered</h2>
+        <div
+          v-if="provider.providerInfo?.services?.length"
+          class="services-grid"
+        >
+          <div
+            v-for="service in provider.providerInfo.services"
+            :key="service._id || service.name"
+            class="service-card"
+          >
+            <h3>{{ service.name }}</h3>
+            <p>{{ service.description }}</p>
+            <p class="price">₱{{ service.price }}</p>
+          </div>
+        </div>
+        <p v-else class="no-data">No services listed</p>
+      </div>
+
+      <!-- Reviews Section -->
+      <div class="section">
+        <h2>Customer Reviews</h2>
+        <div v-if="reviews.length" class="reviews-list">
+          <div v-for="review in reviews" :key="review._id" class="review-card">
+            <div class="review-header">
+              <strong>{{ review.customer.name }}</strong>
+              <span class="review-rating">{{
+                "⭐".repeat(review.rating)
+              }}</span>
             </div>
-          </section>
-
-          <section class="section">
-            <h2>Skills & Certifications</h2>
-            <div class="skills-grid">
-              <span
-                v-for="skill in provider.skills"
-                :key="skill"
-                class="skill-badge"
-              >
-                {{ skill }}
-              </span>
-            </div>
-          </section>
-
-          <section class="section">
-            <div class="section-header">
-              <h2>Reviews ({{ provider.reviewCount }})</h2>
-              <select v-model="reviewFilter" class="filter-select">
-                <option value="all">All Reviews</option>
-                <option value="5">5 Stars</option>
-                <option value="4">4 Stars</option>
-                <option value="3">3 Stars</option>
-              </select>
-            </div>
-
-            <div class="reviews-list">
-              <div
-                v-for="review in provider.reviews"
-                :key="review.id"
-                class="review-item"
-              >
-                <div class="review-header">
-                  <div class="reviewer-info">
-                    <strong>{{ review.userName }}</strong>
-                    <div class="review-rating">
-                      {{ "⭐".repeat(review.rating) }}
-                    </div>
-                  </div>
-                  <span class="review-date">{{ review.date }}</span>
-                </div>
-                <p class="review-text">{{ review.comment }}</p>
-                <div v-if="review.response" class="provider-response">
-                  <strong>Provider Response:</strong>
-                  <p>{{ review.response }}</p>
-                </div>
-              </div>
-            </div>
-          </section>
-        </main>
+            <p>{{ review.comment }}</p>
+            <p class="review-date">{{ formatDate(review.createdAt) }}</p>
+          </div>
+        </div>
+        <p v-else class="no-data">No reviews yet</p>
       </div>
     </div>
 
@@ -163,52 +125,75 @@ export default {
   },
   data() {
     return {
-      provider: null, // ✅ real provider data from API
-      reviews: [], // ✅ reviews from API
-      reviewFilter: "all", // keep your filter option
+      provider: null,
+      reviews: [],
       loading: true,
       error: null,
     };
   },
   methods: {
+    getProfileImage(provider) {
+      if (provider?.profileImage) {
+        return provider.profileImage;
+      }
+      return require("@/assets/images/icons/defaulticon.png");
+    },
     async fetchProviderData() {
       try {
         const providerId = this.$route.params.id;
 
-        // ✅ Fetch provider details
+        if (!providerId) {
+          this.error = "Provider ID is missing";
+          this.loading = false;
+          return;
+        }
+
+        // Fetch provider details
         const providerResponse = await providerAPI.getById(providerId);
         this.provider = providerResponse.data;
 
-        // ✅ Fetch provider reviews
+        // Fetch provider reviews
         const reviewsResponse = await reviewAPI.getProviderReviews(providerId);
         this.reviews = reviewsResponse.data.reviews;
 
         this.loading = false;
       } catch (error) {
         console.error("Error fetching provider:", error);
-        this.error = "Failed to load provider details";
+        this.error =
+          error.response?.data?.message || "Failed to load provider details";
         this.loading = false;
       }
     },
 
-    bookNow() {
-      if (!this.provider) return;
-      this.$router.push({
-        name: "Booking",
-        params: { providerId: this.provider._id },
-      });
+    handleBookNow() {
+      if (!this.$store.getters.isAuthenticated) {
+        alert("Please login to book this service");
+        this.$router.push(`/login?redirect=/booking/${this.provider._id}`);
+        return;
+      }
+      this.$router.push(`/booking/${this.provider._id}`);
     },
 
-    sendMessage() {
-      if (!this.provider) return;
-      this.$router.push({
-        name: "Messages",
-        query: { provider: this.provider._id },
+    handleContact() {
+      if (!this.$store.getters.isAuthenticated) {
+        alert("Please login to contact this provider");
+        this.$router.push("/login");
+        return;
+      }
+      this.$router.push(`/messages/${this.provider._id}`);
+    },
+
+    formatDate(date) {
+      return new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
     },
   },
+
   mounted() {
-    this.fetchProviderData(); // ✅ fetch real data on mount
+    this.fetchProviderData();
   },
 };
 </script>

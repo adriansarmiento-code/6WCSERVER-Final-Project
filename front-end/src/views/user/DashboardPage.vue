@@ -78,15 +78,6 @@
                   </div>
                 </div>
                 <div class="booking-actions">
-                  <!-- Show Pay Now if payment is still pending -->
-                  <button
-                    v-if="booking.paymentStatus === 'pending'"
-                    class="btn btn-primary btn-small"
-                    @click="$router.push(`/payment/${booking._id}`)"
-                  >
-                    Pay Now
-                  </button>
-
                   <button
                     v-if="
                       booking.status === 'pending' &&
@@ -109,12 +100,22 @@
                     Mark as Complete
                   </button>
 
+                  <!-- Only show Leave Review if not reviewed yet -->
                   <button
-                    v-if="booking.status === 'completed'"
+                    v-if="booking.status === 'completed' && !booking.hasReview"
                     class="btn btn-primary btn-small"
                     @click="reviewService(booking)"
                   >
                     Leave Review
+                  </button>
+
+                  <!-- Show "View Review" if already reviewed -->
+                  <button
+                    v-if="booking.status === 'completed' && booking.hasReview"
+                    class="btn btn-outline btn-small"
+                    disabled
+                  >
+                    ✓ Reviewed
                   </button>
 
                   <button
@@ -185,19 +186,23 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="payment in payments" :key="payment.id">
-                    <td>{{ payment.date }}</td>
-                    <td>{{ payment.service }}</td>
-                    <td>{{ payment.provider }}</td>
-                    <td>₱{{ payment.amount }}</td>
+                  <tr v-for="payment in paymentsHistory" :key="payment._id">
+                    <td>{{ formatDate(payment.scheduledDate) }}</td>
+                    <td>{{ payment.service.name }}</td>
+                    <td>{{ payment.provider.name }}</td>
+                    <td>₱{{ payment.totalAmount }}</td>
                     <td>
-                      <span :class="['payment-status', payment.status]">
-                        {{ payment.status }}
+                      <span :class="['payment-status', payment.paymentStatus]">
+                        {{ payment.paymentStatus }}
                       </span>
                     </td>
                   </tr>
                 </tbody>
               </table>
+
+              <div v-if="paymentsHistory.length === 0" class="empty-state">
+                <p>No payment history yet</p>
+              </div>
             </div>
           </div>
 
@@ -320,7 +325,6 @@ export default {
       ],
       bookings: [],
       favorites: [],
-      payments: [],
       loading: false,
       error: null,
     };
@@ -338,6 +342,14 @@ export default {
         (b) =>
           b.status.toLowerCase() ===
           this.bookingFilter.toLowerCase().replace(" ", "-")
+      );
+    },
+    paymentsHistory() {
+      // Filter only completed or cancelled bookings with payment info
+      return this.bookings.filter(
+        (b) =>
+          b.paymentStatus &&
+          (b.status === "completed" || b.status === "cancelled")
       );
     },
   },

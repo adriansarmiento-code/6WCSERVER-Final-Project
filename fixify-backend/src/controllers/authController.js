@@ -54,6 +54,7 @@ exports.register = async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        profileImage: user.profileImage, 
         providerInfo: user.providerInfo,
         token: generateToken(user._id),
       });
@@ -103,7 +104,6 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check for user (include password for comparison)
     const user = await User.findOne({ email }).select('+password');
 
     if (user && (await user.matchPassword(password))) {
@@ -113,6 +113,7 @@ exports.login = async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        profileImage: user.profileImage, // ✅ ADD THIS
         providerInfo: user.providerInfo,
         token: generateToken(user._id),
       });
@@ -131,7 +132,15 @@ exports.login = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    res.json(user);
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      profileImage: user.profileImage, 
+      providerInfo: user.providerInfo,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });

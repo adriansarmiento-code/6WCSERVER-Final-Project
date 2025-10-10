@@ -1,7 +1,7 @@
 <template>
   <div class="search-results-page">
     <AppHeader />
-
+    <LoginPromptModal :show="showLoginModal" @close="showLoginModal = false" />
     <div class="page-header">
       <div class="container">
         <h1>{{ categoryName }} Services</h1>
@@ -85,13 +85,16 @@
           <div class="providers-grid">
             <div
               v-for="provider in filteredProviders"
-              :key="provider.id"
+              :key="provider._id"
               class="provider-card"
-              @click="viewProvider(provider.id)"
+              @click="viewProvider(provider._id)"
             >
               <div class="provider-image">
-                <img :src="provider.image" :alt="provider.name" />
-                <span v-if="provider.verified" class="verified-badge">
+                <img :src="getProfileImage(provider)" :alt="provider.name" />
+                <span
+                  v-if="provider.providerInfo?.verified"
+                  class="verified-badge"
+                >
                   ✓ Verified
                 </span>
               </div>
@@ -101,34 +104,43 @@
                   <h3>{{ provider.name }}</h3>
                   <div class="provider-rating">
                     <span class="stars">{{
-                      "⭐".repeat(Math.floor(provider.rating))
+                      "⭐".repeat(
+                        Math.floor(provider.providerInfo?.rating || 0)
+                      )
                     }}</span>
-                    <span class="rating-text"
-                      >{{ provider.rating }} ({{ provider.reviewCount }})</span
-                    >
+                    <span class="rating-text">
+                      {{ provider.providerInfo?.rating?.toFixed(1) || "New" }}
+                      ({{ provider.providerInfo?.reviewCount || 0 }})
+                    </span>
                   </div>
                 </div>
 
-                <p class="provider-category">{{ provider.category }}</p>
-                <p class="provider-description">{{ provider.description }}</p>
+                <p class="provider-category">
+                  {{ provider.providerInfo?.category }}
+                </p>
+                <p class="provider-description">
+                  {{ provider.providerInfo?.bio || "No description available" }}
+                </p>
 
                 <div class="provider-details">
                   <span class="detail-item">
-                    <strong>Rate:</strong> ₱{{ provider.hourlyRate }}/hr
+                    <strong>Rate:</strong> ₱{{
+                      provider.providerInfo?.hourlyRate || "N/A"
+                    }}/hr
                   </span>
                   <span class="detail-item">
                     <strong>Experience:</strong>
-                    {{ provider.yearsExperience }} years
+                    {{ provider.providerInfo?.yearsExperience || 0 }} years
                   </span>
                   <span class="detail-item">
-                    <strong>Distance:</strong> {{ provider.distance }} km away
+                    <strong>Distance:</strong> N/A km away
                   </span>
                 </div>
 
                 <div class="provider-footer">
                   <button
                     class="btn btn-outline"
-                    @click.stop="contactProvider(provider.id)"
+                    @click.stop="contactProvider(provider._id)"
                   >
                     Contact
                   </button>
@@ -159,15 +171,18 @@
 import AppHeader from "@/components/layout/AppHeader.vue";
 import AppFooter from "@/components/layout/AppFooter.vue";
 import { providerAPI } from "@/services/api";
+import LoginPromptModal from "@/components/LoginPromptModal.vue";
 
 export default {
   name: "SearchResultsPage",
   components: {
     AppHeader,
     AppFooter,
+    LoginPromptModal, // Add this
   },
   data() {
     return {
+      showLoginModal: false,
       categoryName: "Plumbing", // will be replaced by query param
       sortBy: "rating",
       filters: {
@@ -207,9 +222,14 @@ export default {
     },
   },
   methods: {
+    getProfileImage(provider) {
+      if (provider?.profileImage) {
+        return provider.profileImage;
+      }
+      return require("@/assets/images/icons/defaulticon.png");
+    },
     async fetchProviders() {
       try {
-        // ✅ build params from filters + route query
         const params = {
           category: this.$route.query.category,
           minRating: this.filters.minRating || undefined,
@@ -219,30 +239,41 @@ export default {
 
         const response = await providerAPI.getAll(params);
         this.providers = response.data.providers;
-
-        this.applyFilters();
       } catch (error) {
         console.error("Error fetching providers:", error);
       }
     },
 
     applyFilters() {
-      // Already handled via computed property
       console.log("Filters applied");
     },
 
-    updateSort() {
-      this.fetchProviders(); // ✅ re-fetch providers when sorting changes
+    sortProviders() {
+      this.fetchProviders();
     },
 
-    viewProvider(id) {
-      this.$router.push({ name: "ProviderProfile", params: { id } });
+    viewProvider(providerId) {
+      // ✅ Fixed: use _id consistently
+      this.$router.push(`/provider/${providerId}`);
     },
-    contactProvider(id) {
-      this.$router.push({ name: "Messages", query: { provider: id } });
+
+    contactProvider(providerId) {
+      // ✅ Check login for contact too
+      if (!this.$store.getters.isAuthenticated) {
+        this.showLoginModal = true;
+        return;
+      }
+      this.$router.push(`/messages/${providerId}`);
     },
-    bookProvider(id) {
-      this.$router.push({ name: "Booking", params: { providerId: id } });
+
+    bookProvider(providerId) {
+      // ✅ Check if user is logged in
+      if (!this.$store.getters.isAuthenticated) {
+        this.showLoginModal = true;
+        return;
+      }
+
+      this.$router.push(`/booking/${providerId}`);
     },
   },
   mounted() {

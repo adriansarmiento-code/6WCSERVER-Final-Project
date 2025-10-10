@@ -8,7 +8,6 @@ exports.createReview = async (req, res) => {
   try {
     const { bookingId, rating, comment } = req.body;
 
-    // Verify booking exists and is completed
     const booking = await Booking.findById(bookingId);
 
     if (!booking) {
@@ -26,7 +25,7 @@ exports.createReview = async (req, res) => {
     // Check if review already exists
     const existingReview = await Review.findOne({ booking: bookingId });
     if (existingReview) {
-      return res.status(400).json({ message: 'Review already submitted for this booking' });
+      return res.status(400).json({ message: 'You have already reviewed this booking' });
     }
 
     const review = await Review.create({
@@ -36,6 +35,10 @@ exports.createReview = async (req, res) => {
       rating,
       comment,
     });
+
+    // ✅ UPDATE: Set hasReview flag on booking
+    booking.hasReview = true;
+    await booking.save();
 
     await review.populate('customer', 'name');
     await review.populate('provider', 'name providerInfo');

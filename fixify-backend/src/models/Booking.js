@@ -12,6 +12,10 @@ const bookingSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    hasReview: {
+      type: Boolean,
+      default: false,
+    },
     service: {
       name: String,
       price: Number,

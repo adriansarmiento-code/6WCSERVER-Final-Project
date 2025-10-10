@@ -11,6 +11,35 @@
     </header>
 
     <div class="dashboard-container" v-if="currentUser">
+      <!-- Profile Section -->
+      <div class="profile-section">
+        <div class="profile-image-container">
+          <img
+            :src="getProfileImage(currentUser)"
+            alt="Profile"
+            class="profile-image"
+          />
+          <button
+            @click="$refs.imageInput.click()"
+            class="btn-change-photo"
+            :disabled="uploadingImage"
+          >
+            {{ uploadingImage ? "⏳ Uploading..." : "📷 Change Photo" }}
+          </button>
+          <input
+            ref="imageInput"
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/gif"
+            @change="handleImageUpload"
+            style="display: none"
+          />
+        </div>
+        <div class="profile-info">
+          <h2>{{ currentUser.name }}</h2>
+          <p>{{ currentUser.email }}</p>
+          <p class="role-badge">Provider</p>
+        </div>
+      </div>
       <!-- Provider Stats Overview -->
       <div class="stats-grid">
         <div class="stat-card">
@@ -211,12 +240,72 @@
         <!-- Services Management Tab -->
         <div v-if="activeTab === 'services'" class="services-section">
           <h2>My Services</h2>
+
+          <!-- Display existing services -->
+          <div
+            v-if="currentUser.providerInfo?.services?.length"
+            class="services-list"
+          >
+            <div
+              v-for="(service, index) in currentUser.providerInfo.services"
+              :key="index"
+              class="service-item"
+            >
+              <h3>{{ service.name }}</h3>
+              <p>{{ service.description }}</p>
+              <p class="price">₱{{ service.price }}</p>
+              <button @click="editService(index)" class="btn-edit">Edit</button>
+              <button @click="deleteService(index)" class="btn-delete">
+                Delete
+              </button>
+            </div>
+          </div>
+
           <button @click="showAddServiceModal = true" class="btn-add">
             + Add Service
           </button>
 
-          <!-- Service management UI here -->
-          <p class="note">Service management coming soon</p>
+          <!-- Add/Edit Service Modal -->
+          <div
+            v-if="showAddServiceModal"
+            class="modal-overlay"
+            @click="showAddServiceModal = false"
+          >
+            <div class="modal" @click.stop>
+              <h3>{{ editingService ? "Edit Service" : "Add New Service" }}</h3>
+              <form @submit.prevent="saveService">
+                <div class="form-group">
+                  <label>Service Name</label>
+                  <input v-model="serviceForm.name" required />
+                </div>
+                <div class="form-group">
+                  <label>Description</label>
+                  <textarea
+                    v-model="serviceForm.description"
+                    required
+                  ></textarea>
+                </div>
+                <div class="form-group">
+                  <label>Price (₱)</label>
+                  <input
+                    v-model.number="serviceForm.price"
+                    type="number"
+                    required
+                  />
+                </div>
+                <div class="modal-actions">
+                  <button type="submit" class="btn-submit">Save</button>
+                  <button
+                    type="button"
+                    @click="showAddServiceModal = false"
+                    class="btn-cancel"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
 
         <!-- Settings Tab -->
@@ -290,8 +379,17 @@ export default {
   name: "ProviderDashboard",
   data() {
     return {
+      showAddServiceModal: false,
+      editingService: null,
+      serviceForm: {
+        name: "",
+        description: "",
+        price: 0,
+      },
       activeTab: "bookings",
       bookingFilter: "all",
+      uploadingImage: false,
+
       tabs: [
         { id: "bookings", label: "Jobs", icon: "📋" },
         { id: "earnings", label: "Earnings", icon: "💰" },
@@ -333,6 +431,97 @@ export default {
   },
 
   methods: {
+    editService(index) {
+      const service = this.currentUser.providerInfo.services[index];
+      this.serviceForm = { ...service };
+      this.editingService = index;
+      this.showAddServiceModal = true;
+    },
+
+    async deleteService(index) {
+      if (!confirm("Delete this service?")) return;
+
+      const services = [...this.currentUser.providerInfo.services];
+      services.splice(index, 1);
+
+      await this.updateServices(services);
+    },
+
+    async saveService() {
+      const services = this.currentUser.providerInfo.services || [];
+
+      if (this.editingService !== null) {
+        services[this.editingService] = this.serviceForm;
+      } else {
+        services.push(this.serviceForm);
+      }
+
+      await this.updateServices(services);
+      this.showAddServiceModal = false;
+      this.editingService = null;
+      this.serviceForm = { name: "", description: "", price: 0 };
+    },
+
+    async updateServices(services) {
+      try {
+        await providerAPI.update(this.currentUser._id, {
+          providerInfo: { services },
+        });
+
+        const response = await authAPI.getMe();
+        this.$store.dispatch("login", {
+          user: response.data,
+          token: this.$store.getters.getToken,
+        });
+
+        alert("Services updated!");
+      } catch (error) {
+        alert("Failed to update services");
+      }
+    },
+    getProfileImage(user) {
+      if (user?.profileImage) {
+        return user.profileImage; // Base64 string
+      }
+      return require("@/assets/images/icons/defaulticon.png");
+    },
+
+    async handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Image size must be less than 5MB");
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        alert("Please select an image file (JPEG, PNG, GIF)");
+        return;
+      }
+
+      this.uploadingImage = true;
+
+      try {
+        const response = await authAPI.uploadProfileImage(file);
+
+        // Update store with new user data
+        this.$store.dispatch("login", {
+          user: response.data.user,
+          token: this.$store.getters.getToken,
+        });
+
+        alert("Profile picture updated successfully!");
+      } catch (error) {
+        console.error("Upload error:", error);
+        alert(error.response?.data?.message || "Failed to upload image");
+      } finally {
+        this.uploadingImage = false;
+        event.target.value = "";
+      }
+    },
     async fetchBookings() {
       this.loading = true;
       try {
@@ -496,6 +685,73 @@ export default {
 </script>
 
 <style scoped>
+.profile-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #667eea;
+  background: #f7fafc;
+}
+
+.btn-change-photo {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.btn-change-photo:hover:not(:disabled) {
+  background: #5a67d8;
+}
+
+.btn-change-photo:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profile-info h2 {
+  margin: 0 0 0.5rem 0;
+  color: #2d3748;
+}
+
+.profile-info p {
+  margin: 0.25rem 0;
+  color: #718096;
+}
+
+.role-badge {
+  display: inline-block;
+  background: #a8a7a7;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
 .provider-dashboard {
   min-height: 100vh;
   background: #f5f5f5;
