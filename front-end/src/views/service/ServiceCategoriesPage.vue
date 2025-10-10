@@ -127,7 +127,24 @@ export default {
             "electric",
           ],
         },
-        // ... update the rest same way
+        {
+          id: 3,
+          name: "Cleaning",
+          icon: "🧹",
+          description: "Home, office, and general cleaning services",
+          providers: 0,
+          keywords: [
+            "cleaning",
+            "cleaner",
+            "housekeeping",
+            "janitor",
+            "vacuum",
+            "mop",
+            "sanitize",
+            "disinfect",
+            "dust",
+          ],
+        },
       ],
     };
   },

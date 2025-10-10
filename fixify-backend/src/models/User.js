@@ -55,6 +55,20 @@ const userSchema = new mongoose.Schema(
         maxlength: 1000,
       },
       skills: [String],
+      services: [
+        {
+          name: {
+            type: String,
+            required: true,
+          },
+          description: String,
+          price: {
+            type: Number,
+            required: true,
+            min: 0,
+          },
+        },
+      ],
       verified: {
         type: Boolean,
         default: false,

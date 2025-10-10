@@ -49,13 +49,13 @@
             <div class="bookings-list">
               <div
                 v-for="booking in filteredBookings"
-                :key="booking.id"
+                :key="booking._id"
                 class="booking-card"
               >
                 <div class="booking-header">
                   <div class="booking-info">
-                    <h3>{{ booking.serviceName }}</h3>
-                    <p class="provider-name">{{ booking.providerName }}</p>
+                    <h3>{{ booking.service.name }}</h3>
+                    <p class="provider-name">{{ booking.provider.name }}</p>
                   </div>
                   <span :class="['status-badge', booking.status]">
                     {{ booking.status }}
@@ -64,34 +64,51 @@
 
                 <div class="booking-details">
                   <div class="detail">
-                    <strong>Date:</strong> {{ booking.date }}
+                    <strong>Date:</strong>
+                    {{ formatDate(booking.scheduledDate) }}
                   </div>
                   <div class="detail">
-                    <strong>Time:</strong> {{ booking.time }}
+                    <strong>Time:</strong> {{ booking.scheduledTime }}
                   </div>
                   <div class="detail">
-                    <strong>Location:</strong> {{ booking.location }}
+                    <strong>Location:</strong> {{ booking.address }}
                   </div>
                   <div class="detail">
-                    <strong>Amount:</strong> ₱{{ booking.amount }}
+                    <strong>Amount:</strong> ₱{{ booking.totalAmount }}
                   </div>
                 </div>
-
                 <div class="booking-actions">
+                  <!-- Show Pay Now if payment is still pending -->
                   <button
-                    v-if="booking.status === 'pending'"
+                    v-if="booking.paymentStatus === 'pending'"
+                    class="btn btn-primary btn-small"
+                    @click="$router.push(`/payment/${booking._id}`)"
+                  >
+                    Pay Now
+                  </button>
+
+                  <button
+                    v-if="
+                      booking.status === 'pending' &&
+                      booking.paymentStatus === 'held-in-escrow'
+                    "
                     class="btn btn-outline btn-small"
-                    @click="cancelBooking(booking.id)"
+                    @click="cancelBooking(booking._id)"
                   >
                     Cancel
                   </button>
+
                   <button
-                    v-if="booking.status === 'in-progress'"
+                    v-if="
+                      booking.status === 'in-progress' &&
+                      booking.paymentStatus === 'held-in-escrow'
+                    "
                     class="btn btn-primary btn-small"
-                    @click="completeBooking(booking.id)"
+                    @click="completeBooking(booking._id)"
                   >
                     Mark as Complete
                   </button>
+
                   <button
                     v-if="booking.status === 'completed'"
                     class="btn btn-primary btn-small"
@@ -99,9 +116,10 @@
                   >
                     Leave Review
                   </button>
+
                   <button
                     class="btn btn-outline btn-small"
-                    @click="viewBookingDetails(booking.id)"
+                    @click="viewBookingDetails(booking._id)"
                   >
                     View Details
                   </button>
@@ -368,6 +386,58 @@ export default {
       } catch (error) {
         console.error("Error canceling booking:", error);
         alert(error.response?.data?.message || "Failed to cancel booking");
+      }
+    },
+
+    formatDate(date) {
+      return new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    },
+
+    viewBookingDetails(bookingId) {
+      const booking = this.bookings.find((b) => b._id === bookingId);
+      if (booking) {
+        alert(`Booking Details:
+Service: ${booking.service.name}
+Provider: ${booking.provider.name}
+Date: ${this.formatDate(booking.scheduledDate)}
+Time: ${booking.scheduledTime}
+Address: ${booking.address}
+Amount: ₱${booking.totalAmount}
+Status: ${booking.status}
+Payment: ${booking.paymentStatus}`);
+      }
+    },
+
+    async completeBooking(bookingId) {
+      const booking = this.bookings.find((b) => b._id === bookingId);
+
+      // Check if payment was made
+      if (booking.paymentStatus === "pending") {
+        alert("Please complete payment before marking as complete.");
+        this.$router.push(`/payment/${bookingId}`);
+        return;
+      }
+
+      if (booking.paymentStatus !== "held-in-escrow") {
+        alert("Payment status is invalid. Please contact support.");
+        return;
+      }
+
+      try {
+        await bookingAPI.update(bookingId, {
+          status: "completed",
+          paymentStatus: "released",
+        });
+        alert(
+          "Service marked as complete! Payment has been released to the provider."
+        );
+        await this.fetchBookings();
+      } catch (error) {
+        alert(error.response?.data?.message || "Failed to complete booking");
       }
     },
 

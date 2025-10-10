@@ -205,6 +205,7 @@
 <script>
 import AppHeader from "@/components/layout/AppHeader.vue";
 import AppFooter from "@/components/layout/AppFooter.vue";
+import { bookingAPI } from "@/services/api";
 
 export default {
   name: "PaymentSimulationPage",
@@ -258,13 +259,19 @@ export default {
         // Simulate payment processing
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        // Redirect to success page
-        this.$router.push({
-          name: "PaymentSuccess",
-          params: { bookingId: this.bookingId },
+        // Update booking payment status to held-in-escrow
+        await bookingAPI.update(this.bookingId, {
+          paymentStatus: "held-in-escrow",
         });
+
+        alert(
+          "Payment successful! Your funds are held securely until service completion."
+        );
+        this.$router.push("/dashboard");
       } catch (error) {
-        this.errorMessage = "Payment failed. Please try again.";
+        console.error("Payment error:", error);
+        this.errorMessage =
+          error.response?.data?.message || "Payment failed. Please try again.";
       } finally {
         this.isProcessing = false;
       }

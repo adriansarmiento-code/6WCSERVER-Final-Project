@@ -215,7 +215,7 @@ export default {
 
         // Redirect based on user type
         if (this.userType === "provider") {
-          this.$router.push("/provider-profile-setup");
+          this.$router.push("/provider-dashboard");
         } else {
           this.$router.push("/dashboard");
         }

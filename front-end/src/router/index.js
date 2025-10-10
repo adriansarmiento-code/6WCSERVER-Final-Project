@@ -102,6 +102,13 @@ const routes = [
       }
     },
   },
+
+  {
+    path: "/review/:bookingId",
+    name: "ReviewPage",
+    component: () => import("@/views/review/ReviewPage.vue"),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({

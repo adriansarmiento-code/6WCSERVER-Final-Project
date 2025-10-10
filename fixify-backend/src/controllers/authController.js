@@ -11,6 +11,9 @@ const generateToken = (id) => {
 // @desc    Register new user
 // @route   POST /api/auth/register
 // @access  Public
+// @desc    Register new user
+// @route   POST /api/auth/register
+// @access  Public
 exports.register = async (req, res) => {
   try {
     const { name, email, phone, password, role, providerInfo } = req.body;
@@ -32,7 +35,13 @@ exports.register = async (req, res) => {
 
     // Add provider info if role is provider
     if (role === 'provider' && providerInfo) {
-      userData.providerInfo = providerInfo;
+      // Add default services based on category
+      const defaultServices = getDefaultServicesByCategory(providerInfo.category);
+      
+      userData.providerInfo = {
+        ...providerInfo,
+        services: defaultServices, // Add default services
+      };
     }
 
     // Create user
@@ -56,6 +65,36 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// Helper function to get default services by category
+function getDefaultServicesByCategory(category) {
+  const serviceTemplates = {
+    plumbing: [
+      { name: 'Emergency Leak Repair', description: 'Fix urgent leaks and pipe issues', price: 800 },
+      { name: 'Drain Cleaning', description: 'Unclog drains and sewers', price: 500 },
+      { name: 'Fixture Installation', description: 'Install sinks, faucets, toilets', price: 1000 },
+    ],
+    electrical: [
+      { name: 'Wiring Repair', description: 'Fix electrical wiring issues', price: 1200 },
+      { name: 'Outlet Installation', description: 'Install new electrical outlets', price: 600 },
+      { name: 'Light Fixture Setup', description: 'Install ceiling lights and fixtures', price: 800 },
+    ],
+    cleaning: [
+      { name: 'Deep Cleaning', description: 'Thorough cleaning of entire space', price: 1500 },
+      { name: 'Regular Cleaning', description: 'Standard cleaning service', price: 800 },
+      { name: 'Move-in/Move-out', description: 'Cleaning for moving situations', price: 2000 },
+    ],
+    carpentry: [
+      { name: 'Furniture Repair', description: 'Fix broken furniture', price: 900 },
+      { name: 'Custom Cabinet', description: 'Build custom cabinets', price: 3000 },
+      { name: 'Door Installation', description: 'Install or repair doors', price: 1500 },
+    ],
+  };
+
+  return serviceTemplates[category] || [
+    { name: 'General Service', description: 'Basic service offering', price: 500 },
+  ];
+}
 
 // @desc    Login user
 // @route   POST /api/auth/login

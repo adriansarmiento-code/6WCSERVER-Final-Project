@@ -2,7 +2,20 @@
   <div class="booking-page">
     <AppHeader />
 
-    <div class="container">
+    <!-- Add loading state -->
+    <div v-if="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading booking details...</p>
+    </div>
+
+    <!-- Show error if fetch fails -->
+    <div v-else-if="error" class="error-container">
+      <h2>{{ error }}</h2>
+      <button class="btn btn-primary" @click="$router.back()">Go Back</button>
+    </div>
+
+    <!-- Only render when provider data is loaded -->
+    <div v-else-if="provider" class="container">
       <div class="booking-header">
         <h1>Book a Service</h1>
         <p>Complete your booking details</p>
@@ -19,9 +32,13 @@
                 <img :src="provider.image" :alt="provider.name" />
                 <div class="provider-details">
                   <h3>{{ provider.name }}</h3>
-                  <p>{{ provider.category }}</p>
+                  <p>
+                    {{ provider.providerInfo?.category || "Service Provider" }}
+                  </p>
                   <div class="rating">
-                    ⭐ {{ provider.rating }} ({{ provider.reviewCount }}
+                    ⭐ {{ provider.providerInfo?.rating || "N/A" }} ({{
+                      provider.providerInfo?.reviewCount || 0
+                    }}
                     reviews)
                   </div>
                 </div>
@@ -33,14 +50,14 @@
               <h2>Select Service</h2>
               <div class="service-options">
                 <label
-                  v-for="service in provider.services"
-                  :key="service.id"
+                  v-for="service in provider.providerInfo?.services || []"
+                  :key="service._id"
                   class="service-option"
-                  :class="{ selected: selectedService === service.id }"
+                  :class="{ selected: selectedService?._id === service._id }"
                 >
                   <input
                     type="radio"
-                    :value="service.id"
+                    :value="service"
                     v-model="selectedService"
                     required
                   />
@@ -62,14 +79,18 @@
                   <input
                     type="date"
                     id="date"
-                    v-model="bookingData.date"
+                    v-model="bookingData.scheduledDate"
                     :min="minDate"
                     required
                   />
                 </div>
                 <div class="form-group">
                   <label for="time">Preferred Time</label>
-                  <select id="time" v-model="bookingData.time" required>
+                  <select
+                    id="time"
+                    v-model="bookingData.scheduledTime"
+                    required
+                  >
                     <option value="">Select time</option>
                     <option value="08:00">8:00 AM</option>
                     <option value="09:00">9:00 AM</option>
@@ -117,7 +138,7 @@
                   <input
                     type="tel"
                     id="phone"
-                    v-model="bookingData.phone"
+                    v-model="bookingData.contactPhone"
                     placeholder="09XX XXX XXXX"
                     required
                   />
@@ -127,7 +148,7 @@
                   <input
                     type="email"
                     id="email"
-                    v-model="bookingData.email"
+                    v-model="bookingData.contactEmail"
                     placeholder="your@email.com"
                     required
                   />
@@ -149,13 +170,13 @@
             <button
               type="submit"
               class="btn btn-primary btn-large btn-full"
-              :disabled="isLoading || !isFormValid"
+              :disabled="isSubmitting || !isFormValid"
             >
-              {{ isLoading ? "Processing..." : "Proceed to Payment" }}
+              {{ isSubmitting ? "Processing..." : "Proceed to Payment" }}
             </button>
 
-            <div v-if="errorMessage" class="error-message">
-              {{ errorMessage }}
+            <div v-if="submitError" class="error-message">
+              {{ submitError }}
             </div>
           </form>
         </main>
@@ -236,8 +257,8 @@ export default {
   },
   data() {
     return {
-      provider: null, // ✅ fetched from API
-      selectedService: null, // selected service object
+      provider: null,
+      selectedService: null,
       bookingData: {
         scheduledDate: "",
         scheduledTime: "",
@@ -247,8 +268,10 @@ export default {
         notes: "",
       },
       agreedToTerms: false,
-      loading: false,
+      loading: true,
       error: null,
+      isSubmitting: false,
+      submitError: null,
     };
   },
   computed: {
@@ -256,6 +279,12 @@ export default {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       return tomorrow.toISOString().split("T")[0];
+    },
+    selectedServiceName() {
+      return this.selectedService?.name || "Not selected";
+    },
+    selectedServicePrice() {
+      return this.selectedService?.price || 0;
     },
     platformFee() {
       return this.selectedService
@@ -278,7 +307,13 @@ export default {
       });
     },
     formattedTime() {
-      return this.bookingData.scheduledTime || "Not selected";
+      if (!this.bookingData.scheduledTime) return "Not selected";
+      const time = this.bookingData.scheduledTime;
+      const [hours] = time.split(":");
+      const hour = parseInt(hours);
+      const period = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+      return `${displayHour}:00 ${period}`;
     },
     isFormValid() {
       return (
@@ -294,26 +329,38 @@ export default {
   },
   methods: {
     async fetchProvider() {
+      this.loading = true;
+      this.error = null;
+
       try {
         const providerId = this.$route.params.providerId;
+
+        if (!providerId) {
+          throw new Error("Provider ID is missing");
+        }
+
         const response = await providerAPI.getById(providerId);
         this.provider = response.data;
 
-        // ✅ Pre-fill contact info from logged-in user
+        // Pre-fill contact info from logged-in user
         const user = this.$store.getters.currentUser;
         if (user) {
-          this.bookingData.contactPhone = user.phone;
-          this.bookingData.contactEmail = user.email;
+          this.bookingData.contactPhone = user.phone || "";
+          this.bookingData.contactEmail = user.email || "";
         }
+
+        this.loading = false;
       } catch (error) {
         console.error("Error fetching provider:", error);
-        this.error = "Failed to load provider details";
+        this.error =
+          error.response?.data?.message || "Failed to load provider details";
+        this.loading = false;
       }
     },
 
     async handleBooking() {
-      this.loading = true;
-      this.error = null;
+      this.isSubmitting = true;
+      this.submitError = null;
 
       try {
         const bookingPayload = {
@@ -333,24 +380,62 @@ export default {
 
         const response = await bookingAPI.create(bookingPayload);
 
-        // ✅ Redirect to real payment page with booking ID
+        // Redirect to payment page with booking ID
         this.$router.push(`/payment/${response.data._id}`);
       } catch (error) {
         console.error("Error creating booking:", error);
-        this.error =
-          error.response?.data?.message || "Failed to create booking";
+        this.submitError =
+          error.response?.data?.message ||
+          "Failed to create booking. Please try again.";
       } finally {
-        this.loading = false;
+        this.isSubmitting = false;
       }
     },
   },
   mounted() {
-    this.fetchProvider(); // ✅ fetch provider when page loads
+    this.fetchProvider();
   },
 };
 </script>
 
 <style scoped>
+/* Loading and Error States */
+.loading-container,
+.error-container {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-container p {
+  color: #718096;
+  font-size: 1.1rem;
+}
+
+.error-container h2 {
+  color: #e53e3e;
+  margin-bottom: 1rem;
+}
+
 .booking-header {
   text-align: center;
   padding: 3rem 0 2rem;
