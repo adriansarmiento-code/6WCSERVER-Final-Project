@@ -149,7 +149,7 @@ export default {
       try {
         for (const category of this.categories) {
           const response = await providerAPI.getAll({
-            category: category.id, // ✅ Now matches backend string format
+            category: category.id,
           });
           // ✅ Use the count from backend response
           category.providerCount =
