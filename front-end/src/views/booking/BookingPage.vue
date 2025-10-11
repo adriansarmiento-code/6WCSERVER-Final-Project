@@ -29,7 +29,7 @@
             <section class="form-section">
               <h2>Service Provider</h2>
               <div class="provider-summary">
-                <img :src="provider.image" :alt="provider.name" />
+                <img :src="getProfileImage(provider)" :alt="provider.name" />
                 <div class="provider-details">
                   <h3>{{ provider.name }}</h3>
                   <p>
@@ -328,6 +328,12 @@ export default {
     },
   },
   methods: {
+    getProfileImage(provider) {
+      if (provider?.profileImage) {
+        return provider.profileImage;
+      }
+      return require("@/assets/images/icons/defaulticon.png");
+    },
     async fetchProvider() {
       this.loading = true;
       this.error = null;

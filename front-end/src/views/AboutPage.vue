@@ -134,7 +134,7 @@
               <div class="placeholder-avatar">AS</div>
             </div>
             <h3>Adrian P. Sarmiento</h3>
-            <p class="role">Project Leader & Backend & Frontend Developer</p>
+            <p class="role">Project Leader & Full Stack Developer</p>
             <p class="bio">
               Leads project coordination and develops backend functionality
               including APIs and database management.
@@ -197,14 +197,6 @@
                 <li>Node.js</li>
                 <li>Express.js</li>
                 <li>MongoDB</li>
-              </ul>
-            </div>
-            <div class="tech-category">
-              <h3>Features</h3>
-              <ul>
-                <li>Real-time Chat (Socket.IO)</li>
-                <li>Map Integration (Google Maps/Leaflet)</li>
-                <li>Push Notifications (Firebase)</li>
               </ul>
             </div>
           </div>

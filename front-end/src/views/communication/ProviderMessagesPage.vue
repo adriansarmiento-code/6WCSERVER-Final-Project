@@ -1,5 +1,9 @@
 <template>
-  <div class="provider-messaging-page">
+  <!-- Add v-if guard -->
+  <div
+    class="provider-messaging-page"
+    v-if="currentUser && currentUser.role === 'provider'"
+  >
     <!-- Provider Header (same as dashboard) -->
     <header class="provider-header">
       <div class="header-content">
@@ -179,6 +183,12 @@
       </div>
     </div>
   </div>
+
+  <div v-else class="loading-screen">
+    <div class="loader">
+      <p>Loading...</p>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -312,6 +322,13 @@ export default {
     },
   },
 
+  beforeMount() {
+    // Check if user is provider BEFORE mounting
+    if (!this.currentUser || this.currentUser.role !== "provider") {
+      this.$router.push("/login");
+    }
+  },
+
   async mounted() {
     // Check if user is provider
     if (!this.currentUser || this.currentUser.role !== "provider") {
@@ -330,6 +347,24 @@ export default {
 </script>
 
 <style scoped>
+/* Loading Screen */
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+}
+
+.loader {
+  text-align: center;
+  color: #667eea;
+  font-size: 1.2rem;
+}
+
+.loader p {
+  margin-top: 1rem;
+}
 .provider-messaging-page {
   min-height: 100vh;
   background: #f5f5f5;

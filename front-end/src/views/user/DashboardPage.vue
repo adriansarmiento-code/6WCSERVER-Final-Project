@@ -136,41 +136,6 @@
             </div>
           </div>
 
-          <!-- Favorite Providers -->
-          <div v-if="activeTab === 'favorites'" class="tab-content">
-            <h2>Favorite Providers</h2>
-            <div class="favorites-grid">
-              <div
-                v-for="provider in favoriteProviders"
-                :key="provider.id"
-                class="provider-card-small"
-              >
-                <img :src="provider.image" :alt="provider.name" />
-                <div class="provider-info">
-                  <h3>{{ provider.name }}</h3>
-                  <p>{{ provider.category }}</p>
-                  <div class="rating">
-                    ⭐ {{ provider.rating }} ({{ provider.reviews }})
-                  </div>
-                  <div class="provider-actions">
-                    <button
-                      class="btn btn-outline btn-small"
-                      @click="viewProvider(provider.id)"
-                    >
-                      View Profile
-                    </button>
-                    <button
-                      class="btn btn-primary btn-small"
-                      @click="bookProvider(provider.id)"
-                    >
-                      Book
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Payment History -->
           <div v-if="activeTab === 'payments'" class="tab-content">
             <h2>Payment History</h2>
@@ -311,7 +276,6 @@ export default {
       bookingFilter: "All",
       tabs: [
         { id: "bookings", label: "My Bookings", icon: "📅" },
-        { id: "favorites", label: "Favorites", icon: "⭐" },
         { id: "payments", label: "Payments", icon: "💳" },
         { id: "settings", label: "Settings", icon: "⚙️" },
       ],
@@ -323,7 +287,6 @@ export default {
         "Cancelled",
       ],
       bookings: [],
-      favorites: [],
       loading: false,
       error: null,
     };

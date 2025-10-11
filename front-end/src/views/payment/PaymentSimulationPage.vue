@@ -1,5 +1,5 @@
 <template>
-  <div class="payment-page">
+  <div class="payment-page" v-if="booking">
     <AppHeader />
 
     <div class="container">
@@ -20,6 +20,7 @@
             </div>
 
             <form @submit.prevent="processPayment" class="payment-form">
+              <!-- Payment Method Section -->
               <section class="form-section">
                 <h2>Payment Method</h2>
                 <div class="payment-methods">
@@ -46,7 +47,7 @@
                 </div>
               </section>
 
-              <!-- Card Details (if card selected) -->
+              <!-- Card Details -->
               <section v-if="selectedMethod === 'card'" class="form-section">
                 <h2>Card Details</h2>
                 <div class="form-group">
@@ -96,7 +97,7 @@
                 </div>
               </section>
 
-              <!-- E-Wallet (if e-wallet selected) -->
+              <!-- E-Wallet -->
               <section v-if="selectedMethod === 'ewallet'" class="form-section">
                 <h2>E-Wallet Details</h2>
                 <div class="form-group">
@@ -131,7 +132,9 @@
                 class="btn btn-primary btn-large btn-full"
                 :disabled="isProcessing || !agreedToTerms"
               >
-                {{ isProcessing ? "Processing..." : `Pay ₱${totalAmount}` }}
+                {{
+                  isProcessing ? "Processing..." : `Pay ₱${booking.totalAmount}`
+                }}
               </button>
 
               <div v-if="errorMessage" class="error-message">
@@ -141,27 +144,40 @@
           </div>
         </main>
 
-        <!-- Order Summary Sidebar -->
+        <!-- Order Summary Sidebar - NOW WITH REAL DATA -->
         <aside class="payment-summary">
           <div class="summary-card">
             <h3>Order Summary</h3>
 
+            <!-- Provider Info with Profile Picture -->
+            <div class="provider-info">
+              <img
+                :src="getProfileImage(booking.provider)"
+                :alt="booking.provider.name"
+                class="provider-avatar"
+              />
+              <div>
+                <strong>{{ booking.provider.name }}</strong>
+                <p>{{ booking.provider.providerInfo?.category }}</p>
+              </div>
+            </div>
+
             <div class="booking-details">
               <div class="detail-row">
                 <span>Service</span>
-                <strong>Emergency Leak Repair</strong>
-              </div>
-              <div class="detail-row">
-                <span>Provider</span>
-                <strong>Juan dela Cruz</strong>
+                <strong>{{ booking.service.name }}</strong>
               </div>
               <div class="detail-row">
                 <span>Date</span>
-                <strong>Oct 15, 2025</strong>
+                <strong>{{ formatDate(booking.scheduledDate) }}</strong>
               </div>
               <div class="detail-row">
                 <span>Time</span>
-                <strong>2:00 PM</strong>
+                <strong>{{ booking.scheduledTime }}</strong>
+              </div>
+              <div class="detail-row">
+                <span>Location</span>
+                <strong>{{ booking.address }}</strong>
               </div>
             </div>
 
@@ -170,16 +186,16 @@
             <div class="price-breakdown">
               <div class="price-row">
                 <span>Service Fee</span>
-                <span>₱800</span>
+                <span>₱{{ booking.service.price }}</span>
               </div>
               <div class="price-row">
-                <span>Platform Fee</span>
-                <span>₱80</span>
+                <span>Platform Fee (10%)</span>
+                <span>₱{{ platformFee }}</span>
               </div>
               <div class="summary-divider"></div>
               <div class="price-row total">
                 <strong>Total</strong>
-                <strong>₱{{ totalAmount }}</strong>
+                <strong>₱{{ booking.totalAmount }}</strong>
               </div>
             </div>
 
@@ -200,6 +216,13 @@
 
     <AppFooter />
   </div>
+
+  <!-- Loading State -->
+  <div v-else class="loading-screen">
+    <div class="loader">
+      <p>Loading payment details...</p>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -216,6 +239,7 @@ export default {
   data() {
     return {
       bookingId: "",
+      booking: null, // ✅ Will store real booking data
       selectedMethod: "card",
       cardDetails: {
         number: "",
@@ -227,7 +251,6 @@ export default {
       agreedToTerms: false,
       isProcessing: false,
       errorMessage: "",
-      totalAmount: 880,
       paymentMethods: [
         {
           id: "card",
@@ -250,7 +273,26 @@ export default {
       ],
     };
   },
+
+  computed: {
+    platformFee() {
+      if (!this.booking) return 0;
+      return Math.round(this.booking.service.price * 0.1);
+    },
+  },
+
   methods: {
+    async fetchBooking() {
+      try {
+        const response = await bookingAPI.getById(this.bookingId);
+        this.booking = response.data;
+      } catch (error) {
+        console.error("Error fetching booking:", error);
+        alert("Failed to load booking details");
+        this.$router.push("/dashboard");
+      }
+    },
+
     async processPayment() {
       this.errorMessage = "";
       this.isProcessing = true;
@@ -276,14 +318,86 @@ export default {
         this.isProcessing = false;
       }
     },
+
+    getProfileImage(provider) {
+      if (provider?.profileImage) {
+        return provider.profileImage;
+      }
+      return require("@/assets/images/icons/defaulticon.png");
+    },
+
+    formatDate(date) {
+      return new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    },
   },
-  mounted() {
-    this.bookingId = this.$route.params.bookingId || "BOOK-12345";
+
+  async mounted() {
+    this.bookingId = this.$route.params.bookingId;
+
+    if (!this.bookingId) {
+      alert("No booking ID provided");
+      this.$router.push("/dashboard");
+      return;
+    }
+
+    await this.fetchBooking();
   },
 };
 </script>
-
 <style scoped>
+.provider-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.provider-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #667eea;
+}
+
+.provider-info strong {
+  display: block;
+  color: #2d3748;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.provider-info p {
+  color: #667eea;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+  margin: 0;
+}
+
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+}
+
+.loader {
+  text-align: center;
+  color: #667eea;
+  font-size: 1.2rem;
+}
+
+.loader p {
+  margin-top: 1rem;
+}
 .payment-layout {
   display: grid;
   grid-template-columns: 1fr 400px;
