@@ -81,7 +81,7 @@ export default {
       searchQuery: "",
       categories: [
         {
-          id: "plumbing", // ✅ Changed to string to match backend
+          id: "plumbing", 
           name: "Plumbing",
           icon: "🔧",
           description: "Pipes, leaks, installations, and repairs",
@@ -97,7 +97,7 @@ export default {
           ],
         },
         {
-          id: "electrical", // ✅ Changed to string
+          id: "electrical", 
           name: "Electrical",
           icon: "⚡",
           description: "Wiring, fixtures, and electrical repairs",
@@ -113,7 +113,7 @@ export default {
           ],
         },
         {
-          id: "cleaning", // ✅ Changed to string
+          id: "cleaning", 
           name: "Cleaning",
           icon: "🧹",
           description: "Home, office, and general cleaning services",
