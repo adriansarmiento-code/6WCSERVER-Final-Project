@@ -84,4 +84,11 @@ export const reviewAPI = {
   updateStatus: (id, status) => apiClient.put(`/reviews/${id}/status`, status),
 };
 
+// Message API calls
+export const messageAPI = {
+  getConversations: () => apiClient.get("/messages/conversations"),
+  getMessages: (otherUserId) => apiClient.get(`/messages/${otherUserId}`),
+  sendMessage: (otherUserId, message) =>
+    apiClient.post(`/messages/${otherUserId}`, { message }),
+};
 export default apiClient;

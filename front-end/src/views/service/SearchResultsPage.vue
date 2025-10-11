@@ -17,12 +17,14 @@
             <h3>Filters</h3>
 
             <div class="filter-group">
-              <label>Distance</label>
-              <select v-model="filters.radius">
-                <option value="5">Within 5 km</option>
-                <option value="10">Within 10 km</option>
-                <option value="20">Within 20 km</option>
-                <option value="50">Within 50 km</option>
+              <label>Service Area</label>
+              <select v-model="filters.area">
+                <option value="">All Areas</option>
+                <option value="Angeles City Center">Angeles City Center</option>
+                <option value="Balibago">Balibago</option>
+                <option value="Nepo Mall Area">Nepo Mall Area</option>
+                <option value="Marquee Mall Area">Marquee Mall Area</option>
+                <option value="Clark">Clark</option>
               </select>
             </div>
 
@@ -133,7 +135,8 @@
                     {{ provider.providerInfo?.yearsExperience || 0 }} years
                   </span>
                   <span class="detail-item">
-                    <strong>Distance:</strong> N/A km away
+                    <strong>Area:</strong>
+                    {{ provider.providerInfo?.serviceArea || "Angeles City" }}
                   </span>
                 </div>
 
@@ -199,23 +202,35 @@ export default {
     filteredProviders() {
       let results = [...this.providers];
 
-      // ✅ Apply client-side filters
+      // ✅ Filter by verified status
       if (this.filters.verifiedOnly) {
-        results = results.filter((p) => p.verified);
+        results = results.filter((p) => p.providerInfo?.verified === true);
       }
 
-      if (this.filters.minRating > 0) {
+      // ✅ Filter by minimum rating
+      if (this.filters.minRating && parseFloat(this.filters.minRating) > 0) {
         results = results.filter(
-          (p) => p.rating >= parseFloat(this.filters.minRating)
+          (p) =>
+            (p.providerInfo?.rating || 0) >= parseFloat(this.filters.minRating)
         );
       }
 
+      // ✅ Filter by minimum price (hourly rate)
       if (this.filters.minPrice) {
-        results = results.filter((p) => p.hourlyRate >= this.filters.minPrice);
+        results = results.filter(
+          (p) =>
+            (p.providerInfo?.hourlyRate || 0) >=
+            parseFloat(this.filters.minPrice)
+        );
       }
 
+      // ✅ Filter by maximum price (hourly rate)
       if (this.filters.maxPrice) {
-        results = results.filter((p) => p.hourlyRate <= this.filters.maxPrice);
+        results = results.filter(
+          (p) =>
+            (p.providerInfo?.hourlyRate || 0) <=
+            parseFloat(this.filters.maxPrice)
+        );
       }
 
       return results;
@@ -232,6 +247,7 @@ export default {
       try {
         const params = {
           category: this.$route.query.category,
+          serviceArea: this.filters.area || undefined,
           minRating: this.filters.minRating || undefined,
           verified: this.filters.verifiedOnly ? "true" : undefined,
           sort: this.sortBy,
@@ -239,13 +255,21 @@ export default {
 
         const response = await providerAPI.getAll(params);
         this.providers = response.data.providers;
+        if (this.sortBy === "reviews") {
+          this.providers.sort(
+            (a, b) =>
+              (b.providerInfo?.reviewCount || 0) -
+              (a.providerInfo?.reviewCount || 0)
+          );
+        }
       } catch (error) {
         console.error("Error fetching providers:", error);
       }
     },
 
     applyFilters() {
-      console.log("Filters applied");
+      // Re-fetch with new filters
+      this.fetchProviders();
     },
 
     sortProviders() {
@@ -258,7 +282,6 @@ export default {
     },
 
     contactProvider(providerId) {
-      // ✅ Check login for contact too
       if (!this.$store.getters.isAuthenticated) {
         this.showLoginModal = true;
         return;

@@ -55,10 +55,22 @@
                   : '/dashboard'
               "
               class="nav-link"
-              @click="closeMenu"
             >
               Dashboard
             </router-link>
+
+            <!-- Add Messages link -->
+            <router-link
+              :to="
+                currentUser?.role === 'provider'
+                  ? '/provider-messages'
+                  : '/messages'
+              "
+              class="nav-link"
+            >
+              Messages
+            </router-link>
+
             <button @click="handleLogout" class="btn btn-header btn-logout">
               Logout
             </button>

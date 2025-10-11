@@ -46,6 +46,13 @@ const userSchema = new mongoose.Schema(
         type: String,
         enum: ['plumbing', 'electrical', 'cleaning', 'carpentry', 'painting', 'hvac', 'landscaping', 'appliance-repair', 'other'],
       },
+      serviceArea: {
+        type: String,
+        default: 'Angeles City Center',
+      },
+      neighborhoods: [{
+        type: String,
+      }], // e.g., ['Balibago', 'Nepo Mall Area', 'Marquee Mall Area']
       yearsExperience: {
         type: Number,
         min: 0,

@@ -4,12 +4,13 @@
 
     <div class="page-header">
       <div class="container">
-        <h1>Browse Services</h1>
-        <p>Find the perfect service provider for your needs</p>
+        <h1>Find the Right Service</h1>
+        <p>Browse by category to find verified local providers</p>
       </div>
     </div>
 
     <div class="container">
+      <!-- Just the search bar, no other filters -->
       <div class="search-section">
         <div class="search-bar">
           <input
@@ -19,22 +20,6 @@
             @keyup.enter="handleSearch"
           />
           <button class="btn btn-primary" @click="handleSearch">Search</button>
-        </div>
-
-        <div class="filters">
-          <select v-model="sortBy" class="filter-select" @change="applySorting">
-            <option value="rating">Highest Rated</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="experience">Most Experienced</option>
-          </select>
-
-          <select v-model="radiusFilter" class="filter-select">
-            <option value="5">Within 5 km</option>
-            <option value="10">Within 10 km</option>
-            <option value="20">Within 20 km</option>
-            <option value="50">Within 50 km</option>
-          </select>
         </div>
       </div>
 
@@ -47,6 +32,7 @@
         </p>
       </div>
 
+      <!-- Categories Grid -->
       <div class="categories-grid">
         <div
           v-for="category in filteredCategories"
@@ -58,7 +44,9 @@
           <h3>{{ category.name }}</h3>
           <p>{{ category.description }}</p>
           <div class="category-stats">
-            <span>{{ category.providerCount }} providers</span>
+            <span class="provider-count"
+              >{{ category.providerCount }} providers</span
+            >
           </div>
         </div>
       </div>
@@ -91,16 +79,13 @@ export default {
   data() {
     return {
       searchQuery: "",
-      sortBy: "rating",
-      radiusFilter: "10",
-      providers: [], // ✅ fetched from API
       categories: [
         {
-          id: 1,
+          id: "plumbing", // ✅ Changed to string to match backend
           name: "Plumbing",
           icon: "🔧",
           description: "Pipes, leaks, installations, and repairs",
-          providers: 0, // ✅ start with 0
+          providerCount: 0,
           keywords: [
             "plumber",
             "pipe",
@@ -112,11 +97,11 @@ export default {
           ],
         },
         {
-          id: 2,
+          id: "electrical", // ✅ Changed to string
           name: "Electrical",
           icon: "⚡",
           description: "Wiring, fixtures, and electrical repairs",
-          providers: 0,
+          providerCount: 0,
           keywords: [
             "electrician",
             "wire",
@@ -128,11 +113,11 @@ export default {
           ],
         },
         {
-          id: 3,
+          id: "cleaning", // ✅ Changed to string
           name: "Cleaning",
           icon: "🧹",
           description: "Home, office, and general cleaning services",
-          providers: 0,
+          providerCount: 0,
           keywords: [
             "cleaning",
             "cleaner",
@@ -140,9 +125,6 @@ export default {
             "janitor",
             "vacuum",
             "mop",
-            "sanitize",
-            "disinfect",
-            "dust",
           ],
         },
       ],
@@ -163,21 +145,18 @@ export default {
     },
   },
   methods: {
-    async fetchProviders() {
+    async fetchProviderCounts() {
       try {
-        const response = await providerAPI.getAll();
-        this.providers = response.data.providers;
-
-        // ✅ update categories with real counts
-        this.categories.forEach((category) => {
-          const categoryKey = category.id;
-          const count = this.providers.filter(
-            (p) => p.providerInfo?.category === categoryKey
-          ).length;
-          category.providers = count;
-        });
+        for (const category of this.categories) {
+          const response = await providerAPI.getAll({
+            category: category.id, // ✅ Now matches backend string format
+          });
+          // ✅ Use the count from backend response
+          category.providerCount =
+            response.data.count || response.data.providers?.length || 0;
+        }
       } catch (error) {
-        console.error("Error fetching providers:", error);
+        console.error("Error fetching provider counts:", error);
       }
     },
 
@@ -185,33 +164,22 @@ export default {
       console.log("Searching for:", this.searchQuery);
       window.scrollTo({ top: 400, behavior: "smooth" });
     },
+
     clearSearch() {
       this.searchQuery = "";
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
-    applySorting() {
-      let sorted = [...this.categories];
-      switch (this.sortBy) {
-        case "rating":
-        case "price-high":
-        case "experience":
-          sorted.sort((a, b) => b.providers - a.providers);
-          break;
-        case "price-low":
-          sorted.sort((a, b) => a.providers - b.providers);
-          break;
-      }
-      this.categories = sorted;
-    },
+
     selectCategory(category) {
       this.$router.push({
-        name: "SearchResults",
-        query: { category: category.name.toLowerCase() },
+        path: "/search",
+        query: { category: category.id }, // ✅ Use category.id (the string)
       });
     },
   },
+
   mounted() {
-    this.fetchProviders(); // ✅ load providers on mount
+    this.fetchProviderCounts(); // ✅ Fetch counts on mount
   },
 };
 </script>
@@ -367,7 +335,7 @@ export default {
 }
 
 .category-stats span {
-  color: #667eea;
+  color: #f7f7f7;
   font-weight: 600;
   font-size: 0.9rem;
 }
@@ -389,6 +357,43 @@ export default {
 .no-results p {
   color: #718096;
   margin-bottom: 1.5rem;
+}
+.search-controls {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.area-select {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 250px;
+}
+
+.area-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.area-select:hover {
+  border-color: #667eea;
+}
+
+.provider-count {
+  display: inline-block;
+  background: #667eea;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
 }
 
 @media (max-width: 768px) {

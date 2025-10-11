@@ -313,7 +313,6 @@ export default {
         { id: "bookings", label: "My Bookings", icon: "📅" },
         { id: "favorites", label: "Favorites", icon: "⭐" },
         { id: "payments", label: "Payments", icon: "💳" },
-        { id: "messages", label: "Messages", icon: "💬" },
         { id: "settings", label: "Settings", icon: "⚙️" },
       ],
       bookingFilters: [

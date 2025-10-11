@@ -5,6 +5,9 @@
       <div class="header-content">
         <div class="logo">Fixify Provider</div>
         <nav>
+          <router-link to="/provider-messages" class="nav-link"
+            >Messages</router-link
+          >
           <button @click="handleLogout" class="logout-btn">Logout</button>
         </nav>
       </div>
@@ -323,6 +326,18 @@
               <input v-model="profileForm.phone" type="text" />
             </div>
 
+            <!-- ADD THIS SERVICE AREA FIELD -->
+            <div class="form-group">
+              <label>Service Area</label>
+              <select v-model="profileForm.serviceArea">
+                <option value="Angeles City Center">Angeles City Center</option>
+                <option value="Balibago">Balibago</option>
+                <option value="Nepo Mall Area">Nepo Mall Area</option>
+                <option value="Marquee Mall Area">Marquee Mall Area</option>
+                <option value="Clark">Clark</option>
+              </select>
+            </div>
+
             <div class="form-group">
               <label>Bio</label>
               <textarea v-model="profileForm.bio" rows="4"></textarea>
@@ -413,6 +428,7 @@ export default {
       profileForm: {
         name: "",
         phone: "",
+        serviceArea: "",
         bio: "",
         hourlyRate: 0,
         skills: "",
@@ -601,7 +617,7 @@ export default {
     },
 
     openChat(customerId) {
-      this.$router.push(`/messages/${customerId}`);
+      this.$router.push(`/provider-messages/${customerId}`);
     },
 
     openResponseModal(review) {
@@ -630,6 +646,7 @@ export default {
           name: this.profileForm.name,
           phone: this.profileForm.phone,
           providerInfo: {
+            serviceArea: this.profileForm.serviceArea,
             bio: this.profileForm.bio,
             hourlyRate: this.profileForm.hourlyRate,
             skills: skills,
@@ -672,6 +689,8 @@ export default {
     // Pre-fill profile form
     this.profileForm.name = this.currentUser.name;
     this.profileForm.phone = this.currentUser.phone;
+    this.profileForm.serviceArea =
+      this.currentUser.providerInfo?.serviceArea || "Angeles City Center";
     this.profileForm.bio = this.currentUser.providerInfo?.bio || "";
     this.profileForm.hourlyRate =
       this.currentUser.providerInfo?.hourlyRate || 0;

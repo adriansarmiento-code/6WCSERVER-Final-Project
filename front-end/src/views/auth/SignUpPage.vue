@@ -90,7 +90,6 @@
                 <option value="plumbing">Plumbing</option>
                 <option value="electrical">Electrical</option>
                 <option value="cleaning">Cleaning</option>
-                <option value="carpentry">Carpentry</option>
                 <option value="other">Other</option>
               </select>
             </div>

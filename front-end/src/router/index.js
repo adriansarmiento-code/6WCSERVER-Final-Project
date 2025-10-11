@@ -78,6 +78,12 @@ const routes = [
     name: "About",
     component: AboutPage,
   },
+  {
+    path: "/provider-messages/:customerId?",
+    name: "ProviderMessages",
+    component: () => import("@/views/communication/ProviderMessagesPage.vue"),
+    meta: { requiresAuth: true },
+  },
   // Admin Routes
   {
     path: "/admin/login",
@@ -102,7 +108,6 @@ const routes = [
       }
     },
   },
-
   {
     path: "/review/:bookingId",
     name: "ReviewPage",

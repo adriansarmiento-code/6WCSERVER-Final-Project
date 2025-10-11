@@ -6,9 +6,8 @@ const Provider = require('../models/Provider');
 // @access  Public
 exports.getProviders = async (req, res) => {
   try {
-    const { category, minRating, maxDistance, verified, sort } = req.query;
+    const { category, minRating, maxDistance, verified, sort, serviceArea } = req.query;
 
-    // Build query
     let query = { role: 'provider', isActive: true };
 
     if (category) {
@@ -22,21 +21,29 @@ exports.getProviders = async (req, res) => {
     if (verified === 'true') {
       query['providerInfo.verified'] = true;
     }
+    
+    if (serviceArea) {
+      query['providerInfo.serviceArea'] = serviceArea;
+    }
 
-    // Execute query
     let providers = await User.find(query).select('-password');
 
     // Sort results
     if (sort === 'rating') {
-      providers.sort((a, b) => b.providerInfo.rating - a.providerInfo.rating);
+      providers.sort((a, b) => (b.providerInfo?.rating || 0) - (a.providerInfo?.rating || 0));
     } else if (sort === 'price-low') {
-      providers.sort((a, b) => a.providerInfo.hourlyRate - b.providerInfo.hourlyRate);
+      providers.sort((a, b) => (a.providerInfo?.hourlyRate || 0) - (b.providerInfo?.hourlyRate || 0));
     } else if (sort === 'price-high') {
-      providers.sort((a, b) => b.providerInfo.hourlyRate - a.providerInfo.hourlyRate);
+      providers.sort((a, b) => (b.providerInfo?.hourlyRate || 0) - (a.providerInfo?.hourlyRate || 0));
+    } else if (sort === 'experience') {
+      providers.sort((a, b) => (b.providerInfo?.yearsExperience || 0) - (a.providerInfo?.yearsExperience || 0));
+    } else if (sort === 'reviews') {
+      providers.sort((a, b) => (b.providerInfo?.reviewCount || 0) - (a.providerInfo?.reviewCount || 0));
     }
 
+
     res.json({
-      count: providers.length,
+      count: providers.length, 
       providers,
     });
   } catch (error) {

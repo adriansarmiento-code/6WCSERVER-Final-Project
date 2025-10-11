@@ -1,20 +1,34 @@
 <template>
-  <div class="messaging-page">
-    <AppHeader />
+  <div class="provider-messaging-page">
+    <!-- Provider Header (same as dashboard) -->
+    <header class="provider-header">
+      <div class="header-content">
+        <div class="logo">Fixify Provider</div>
+        <nav>
+          <router-link to="/provider-dashboard" class="nav-link"
+            >Dashboard</router-link
+          >
+          <router-link to="/provider-messages" class="nav-link active"
+            >Messages</router-link
+          >
+          <button @click="handleLogout" class="logout-btn">Logout</button>
+        </nav>
+      </div>
+    </header>
 
     <div class="container">
       <div class="messaging-layout">
         <!-- Conversations List -->
         <aside class="conversations-sidebar">
           <div class="sidebar-header">
-            <h2>Messages</h2>
+            <h2>Customer Messages</h2>
           </div>
 
           <div class="search-box">
             <input
               type="text"
               v-model="searchQuery"
-              placeholder="Search conversations..."
+              placeholder="Search customers..."
             />
           </div>
 
@@ -49,7 +63,10 @@
             </div>
 
             <div v-if="conversations.length === 0" class="empty-conversations">
-              <p>No conversations yet</p>
+              <p>No customer messages yet</p>
+              <p class="hint">
+                Customers will message you when they book your services
+              </p>
             </div>
           </div>
         </aside>
@@ -65,16 +82,17 @@
                 />
                 <div>
                   <strong>{{ selectedUser?.name }}</strong>
-                  <span class="status">Active</span>
+                  <span class="status">Customer</span>
                 </div>
               </div>
               <div class="chat-actions">
-                <router-link
-                  :to="`/provider/${selectedUserId}`"
+                <!-- Show customer's contact info instead of profile link -->
+                <button
+                  @click="showCustomerInfo"
                   class="btn btn-outline btn-small"
                 >
-                  View Profile
-                </router-link>
+                  Customer Info
+                </button>
               </div>
             </div>
 
@@ -105,7 +123,7 @@
                 <input
                   type="text"
                   v-model="newMessage"
-                  placeholder="Type your message..."
+                  placeholder="Type your message to customer..."
                   class="message-input"
                 />
                 <button
@@ -121,28 +139,53 @@
 
           <div v-else class="empty-chat">
             <div class="empty-icon">💬</div>
-            <h3>Select a conversation</h3>
-            <p>Choose a conversation from the list to start messaging</p>
+            <h3>Select a customer</h3>
+            <p>Choose a conversation to start messaging</p>
           </div>
         </main>
       </div>
     </div>
 
-    <AppFooter />
+    <!-- Customer Info Modal -->
+    <div
+      v-if="showCustomerModal"
+      class="modal-overlay"
+      @click="showCustomerModal = false"
+    >
+      <div class="modal" @click.stop>
+        <h3>Customer Information</h3>
+        <div class="customer-info-content">
+          <img
+            :src="getProfileImage(selectedUser)"
+            :alt="selectedUser?.name"
+            class="customer-avatar"
+          />
+          <div class="info-item">
+            <strong>Name:</strong>
+            <span>{{ selectedUser?.name }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Email:</strong>
+            <span>{{ selectedUser?.email || "Not provided" }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Phone:</strong>
+            <span>{{ selectedUser?.phone || "Not provided" }}</span>
+          </div>
+        </div>
+        <button @click="showCustomerModal = false" class="btn btn-primary">
+          Close
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import AppHeader from "@/components/layout/AppHeader.vue";
-import AppFooter from "@/components/layout/AppFooter.vue";
 import { messageAPI } from "@/services/api";
 
 export default {
-  name: "MessagingPage",
-  components: {
-    AppHeader,
-    AppFooter,
-  },
+  name: "ProviderMessagesPage",
   data() {
     return {
       searchQuery: "",
@@ -153,6 +196,7 @@ export default {
       loading: false,
       loadingMessages: false,
       sending: false,
+      showCustomerModal: false,
     };
   },
   computed: {
@@ -219,7 +263,6 @@ export default {
         this.messages.push(response.data.message);
         this.newMessage = "";
 
-        // Update conversation list
         await this.fetchConversations();
 
         this.$nextTick(() => {
@@ -231,6 +274,10 @@ export default {
       } finally {
         this.sending = false;
       }
+    },
+
+    showCustomerInfo() {
+      this.showCustomerModal = true;
     },
 
     scrollToBottom() {
@@ -258,13 +305,23 @@ export default {
       if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
       return msgDate.toLocaleDateString();
     },
+
+    handleLogout() {
+      this.$store.dispatch("logout");
+      this.$router.push("/login");
+    },
   },
 
   async mounted() {
+    // Check if user is provider
+    if (!this.currentUser || this.currentUser.role !== "provider") {
+      this.$router.push("/login");
+      return;
+    }
+
     await this.fetchConversations();
 
-    // If coming from a link with userId param
-    const userId = this.$route.params.conversationId;
+    const userId = this.$route.params.customerId;
     if (userId) {
       this.selectConversation(userId);
     }
@@ -273,13 +330,77 @@ export default {
 </script>
 
 <style scoped>
+.provider-messaging-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+/* Provider Header (same as dashboard) */
+.provider-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.provider-header nav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.nav-link {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: white;
+  text-decoration: underline;
+}
+
+.logout-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
 .messaging-layout {
   display: grid;
   grid-template-columns: 350px 1fr;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 250px);
   min-height: 600px;
   gap: 0;
-  margin: 2rem 0;
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -295,9 +416,6 @@ export default {
 .sidebar-header {
   padding: 1.5rem;
   border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .sidebar-header h2 {
@@ -398,6 +516,17 @@ export default {
   font-weight: 600;
   min-width: 24px;
   text-align: center;
+}
+
+.empty-conversations {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #718096;
+}
+
+.empty-conversations .hint {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
 }
 
 .chat-area {
@@ -538,8 +667,65 @@ export default {
   margin-bottom: 0.5rem;
 }
 
-.empty-chat p {
-  font-size: 1rem;
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #718096;
+}
+
+/* Customer Info Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 90%;
+}
+
+.modal h3 {
+  margin-top: 0;
+  color: #2d3748;
+}
+
+.customer-info-content {
+  margin: 1.5rem 0;
+}
+
+.customer-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: block;
+  margin: 0 auto 1.5rem;
+  object-fit: cover;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.info-item strong {
+  color: #2d3748;
+}
+
+.info-item span {
+  color: #718096;
 }
 
 @media (max-width: 1024px) {
