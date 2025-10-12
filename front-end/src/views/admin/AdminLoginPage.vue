@@ -55,6 +55,8 @@
 </template>
 
 <script>
+import { authAPI } from "@/services/api";
+
 export default {
   name: "AdminLoginPage",
   data() {
@@ -73,26 +75,29 @@ export default {
       this.isLoading = true;
 
       try {
-        // Simulate API call - hardcoded demo credentials
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Real API call
+        const response = await authAPI.login({
+          email: this.credentials.email,
+          password: this.credentials.password,
+        });
 
-        if (
-          this.credentials.email === "admin@fixify.com" &&
-          this.credentials.password === "admin123"
-        ) {
-          // Store admin session
-          this.$store.dispatch("adminLogin", {
-            email: this.credentials.email,
-            role: "admin",
-          });
-
-          // Redirect to admin dashboard
-          this.$router.push("/admin/dashboard");
-        } else {
-          this.errorMessage = "Invalid admin credentials";
+        // Check if user is admin
+        if (response.data.role !== "admin") {
+          this.errorMessage = "Access denied. Admin only.";
+          return;
         }
+
+        // Store admin session
+        this.$store.dispatch("adminLogin", {
+          user: response.data,
+          token: response.data.token,
+        });
+
+        // Redirect to admin dashboard
+        this.$router.push("/admin/dashboard");
       } catch (error) {
-        this.errorMessage = "Login failed. Please try again.";
+        this.errorMessage =
+          error.response?.data?.message || "Invalid admin credentials";
       } finally {
         this.isLoading = false;
       }

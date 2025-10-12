@@ -40,7 +40,9 @@
           class="category-card"
           @click="selectCategory(category)"
         >
-          <div class="category-icon">{{ category.icon }}</div>
+          <div class="category-image">
+            <img :src="category.image" :alt="category.name" />
+          </div>
           <h3>{{ category.name }}</h3>
           <p>{{ category.description }}</p>
           <div class="category-stats">
@@ -83,7 +85,7 @@ export default {
         {
           id: "plumbing",
           name: "Plumbing",
-          icon: "🔧",
+          image: require("@/assets/images/plumber.jpg"),
           description: "Pipes, leaks, installations, and repairs",
           providerCount: 0,
           keywords: [
@@ -99,7 +101,7 @@ export default {
         {
           id: "electrical",
           name: "Electrical",
-          icon: "⚡",
+          image: require("@/assets/images/electrical.jpg"),
           description: "Wiring, fixtures, and electrical repairs",
           providerCount: 0,
           keywords: [
@@ -115,7 +117,7 @@ export default {
         {
           id: "cleaning",
           name: "Cleaning",
-          icon: "🧹",
+          image: require("@/assets/images/cleaning.jpg"),
           description: "Home, office, and general cleaning services",
           providerCount: 0,
           keywords: [
@@ -151,7 +153,6 @@ export default {
           const response = await providerAPI.getAll({
             category: category.id,
           });
-          // ✅ Use the count from backend response
           category.providerCount =
             response.data.count || response.data.providers?.length || 0;
         }
@@ -173,13 +174,13 @@ export default {
     selectCategory(category) {
       this.$router.push({
         path: "/search",
-        query: { category: category.id }, // ✅ Use category.id (the string)
+        query: { category: category.id },
       });
     },
   },
 
   mounted() {
-    this.fetchProviderCounts(); // ✅ Fetch counts on mount
+    this.fetchProviderCounts();
   },
 };
 </script>
@@ -195,6 +196,7 @@ export default {
 .page-header h1 {
   font-size: 3rem;
   margin-bottom: 1rem;
+  font-weight: 700;
 }
 
 .page-header p {
@@ -217,18 +219,35 @@ export default {
   flex: 1;
   padding: 14px 20px;
   border: 2px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
 .search-bar input:focus {
   outline: none;
   border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .search-bar button {
   padding: 14px 32px;
   white-space: nowrap;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 .filters {
@@ -252,112 +271,197 @@ export default {
 }
 
 .search-results-message {
-  background: #eef2ff;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
   border: 2px solid #c7d2fe;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1rem 1.5rem;
   margin-bottom: 2rem;
   display: flex;
   justify-content: center;
   align-items: center;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .search-results-message p {
   margin: 0;
   color: #4c51bf;
   font-size: 1rem;
+  font-weight: 500;
 }
 
 .search-results-message strong {
   color: #667eea;
+  font-weight: 700;
 }
 
 .clear-search {
   margin-left: 1rem;
-  padding: 6px 16px;
+  padding: 8px 18px;
   background: white;
-  border: 1px solid #667eea;
+  border: 2px solid #667eea;
   color: #667eea;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 600;
   transition: all 0.3s ease;
 }
 
 .clear-search:hover {
   background: #667eea;
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2.5rem;
   padding: 2rem 0 4rem;
 }
 
 .category-card {
   background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
+  transition: all 0.4s ease;
+  border: 2px solid #f1f5f9;
+  overflow: hidden;
+  position: relative;
+}
+
+.category-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transform: scaleX(0);
+  transition: transform 0.4s ease;
 }
 
 .category-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
   border-color: #667eea;
 }
 
-.category-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
+.category-card:hover::before {
+  transform: scaleX(1);
+}
+
+.category-image {
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  position: relative;
+}
+
+.category-image::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  transition: opacity 0.4s ease;
+}
+
+.category-card:hover .category-image::after {
+  opacity: 0;
+}
+
+.category-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.category-card:hover .category-image img {
+  transform: scale(1.1);
 }
 
 .category-card h3 {
   font-size: 1.5rem;
-  margin-bottom: 0.75rem;
+  margin: 1.5rem 1.5rem 0.75rem;
   color: #2d3748;
+  font-weight: 700;
 }
 
 .category-card p {
   color: #718096;
-  margin-bottom: 1rem;
-  line-height: 1.5;
+  margin: 0 1.5rem 1.5rem;
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
 
 .category-stats {
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: center;
 }
 
-.category-stats span {
-  color: #f7f7f7;
-  font-weight: 600;
+.provider-count {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 1.25rem;
+  border-radius: 20px;
   font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.category-card:hover .provider-count {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
 }
 
 .no-results {
   text-align: center;
   padding: 4rem 2rem;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 2px solid #f1f5f9;
 }
 
 .no-results h3 {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   color: #2d3748;
   margin-bottom: 0.5rem;
+  font-weight: 700;
 }
 
 .no-results p {
   color: #718096;
   margin-bottom: 1.5rem;
+  font-size: 1.05rem;
 }
+
 .search-controls {
   display: flex;
   justify-content: center;
@@ -385,20 +489,13 @@ export default {
   border-color: #667eea;
 }
 
-.provider-count {
-  display: inline-block;
-  background: #667eea;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-top: 0.5rem;
-}
-
 @media (max-width: 768px) {
   .page-header h1 {
     font-size: 2rem;
+  }
+
+  .page-header p {
+    font-size: 1.05rem;
   }
 
   .search-bar {
@@ -411,15 +508,43 @@ export default {
 
   .categories-grid {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .category-image {
+    height: 180px;
   }
 
   .search-results-message {
     flex-direction: column;
     gap: 1rem;
+    text-align: center;
   }
 
   .clear-search {
     margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    padding: 40px 0;
+  }
+
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .search-section {
+    padding: 2rem 0;
+  }
+
+  .category-card h3 {
+    font-size: 1.25rem;
+  }
+
+  .category-image {
+    height: 160px;
   }
 }
 </style>

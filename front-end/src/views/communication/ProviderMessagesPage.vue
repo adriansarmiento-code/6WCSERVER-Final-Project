@@ -1,10 +1,9 @@
 <template>
-  <!-- Add v-if guard -->
   <div
     class="provider-messaging-page"
     v-if="currentUser && currentUser.role === 'provider'"
   >
-    <!-- Provider Header (same as dashboard) -->
+    <!-- Provider Header -->
     <header class="provider-header">
       <div class="header-content">
         <div class="logo">Fixify Provider</div>
@@ -90,7 +89,6 @@
                 </div>
               </div>
               <div class="chat-actions">
-                <!-- Show customer's contact info instead of profile link -->
                 <button
                   @click="showCustomerInfo"
                   class="btn btn-outline btn-small"
@@ -323,14 +321,12 @@ export default {
   },
 
   beforeMount() {
-    // Check if user is provider BEFORE mounting
     if (!this.currentUser || this.currentUser.role !== "provider") {
       this.$router.push("/login");
     }
   },
 
   async mounted() {
-    // Check if user is provider
     if (!this.currentUser || this.currentUser.role !== "provider") {
       this.$router.push("/login");
       return;
@@ -365,12 +361,13 @@ export default {
 .loader p {
   margin-top: 1rem;
 }
+
 .provider-messaging-page {
   min-height: 100vh;
   background: #f5f5f5;
 }
 
-/* Provider Header (same as dashboard) */
+/* Provider Header */
 .provider-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -446,11 +443,13 @@ export default {
   border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .sidebar-header {
   padding: 1.5rem;
   border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
 .sidebar-header h2 {
@@ -462,6 +461,7 @@ export default {
 .search-box {
   padding: 1rem;
   border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
 .search-box input {
@@ -480,6 +480,25 @@ export default {
 .conversations-list {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar for conversations */
+.conversations-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.conversations-list::-webkit-scrollbar-track {
+  background: #f7fafc;
+}
+
+.conversations-list::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.conversations-list::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
 }
 
 .conversation-item {
@@ -506,6 +525,7 @@ export default {
   height: 50px;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
 .conversation-info {
@@ -567,12 +587,14 @@ export default {
 .chat-area {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .chat-container {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
 
 .chat-header {
@@ -581,6 +603,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .chat-user-info {
@@ -610,15 +633,47 @@ export default {
 .messages-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 2rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
+/* Custom scrollbar for messages */
+.messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: #f7fafc;
+  border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
 .message {
   display: flex;
   margin-bottom: 0.5rem;
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .message.sent {
@@ -634,6 +689,8 @@ export default {
   padding: 12px 16px;
   border-radius: 12px;
   position: relative;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .message.sent .message-content {
@@ -661,6 +718,7 @@ export default {
 .message-input-container {
   padding: 1.5rem;
   border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
 .message-form {
@@ -679,6 +737,57 @@ export default {
 .message-input:focus {
   outline: none;
   border-color: #667eea;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #5a67d8;
+  border-color: #5a67d8;
+  transform: translateY(-2px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+.btn-outline:hover {
+  border-color: #667eea;
+  color: #667eea;
+  background: #f8fafc;
+}
+
+.btn-small {
+  padding: 0.65rem 1.25rem;
+  font-size: 0.9rem;
 }
 
 .empty-chat {

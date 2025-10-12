@@ -91,4 +91,17 @@ export const messageAPI = {
   sendMessage: (otherUserId, message) =>
     apiClient.post(`/messages/${otherUserId}`, { message }),
 };
+
+// Admin API calls
+export const adminAPI = {
+  getStats: () => apiClient.get("/admin/stats"),
+  getActivity: () => apiClient.get("/admin/activity"),
+  getAllUsers: (params) => apiClient.get("/admin/users", { params }),
+  getAllProviders: (params) => apiClient.get("/admin/providers", { params }),
+  verifyProvider: (id) => apiClient.put(`/admin/providers/${id}/verify`),
+  getAllBookings: (params) => apiClient.get("/admin/bookings", { params }),
+  getAllReviews: (params) => apiClient.get("/admin/reviews", { params }),
+  updateReviewStatus: (id, status) =>
+    apiClient.put(`/admin/reviews/${id}/status`, { status }),
+};
 export default apiClient;

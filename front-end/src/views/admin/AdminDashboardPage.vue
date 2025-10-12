@@ -28,67 +28,74 @@
 
         <!-- Overview Tab -->
         <div v-if="activeTab === 'overview'" class="tab-content">
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon">👥</div>
-              <div class="stat-info">
-                <h3>Total Users</h3>
-                <p class="stat-number">1,247</p>
-                <span class="stat-change positive">+12% this month</span>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">🔧</div>
-              <div class="stat-info">
-                <h3>Active Providers</h3>
-                <p class="stat-number">342</p>
-                <span class="stat-change positive">+8% this month</span>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">📅</div>
-              <div class="stat-info">
-                <h3>Total Bookings</h3>
-                <p class="stat-number">5,831</p>
-                <span class="stat-change positive">+15% this month</span>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">💰</div>
-              <div class="stat-info">
-                <h3>Revenue</h3>
-                <p class="stat-number">₱284,500</p>
-                <span class="stat-change positive">+23% this month</span>
-              </div>
-            </div>
-          </div>
+          <div v-if="loading" class="loading">Loading statistics...</div>
 
-          <div class="recent-activity">
-            <h2>Recent Activity</h2>
-            <div class="activity-list">
-              <div class="activity-item">
-                <span class="activity-icon">👤</span>
-                <div class="activity-info">
-                  <strong>New user registered</strong>
-                  <p>Maria Santos joined as a customer</p>
+          <div v-else>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-info">
+                  <h3>Total Users</h3>
+                  <p class="stat-number">{{ stats.totalUsers }}</p>
+                  <span class="stat-change positive"
+                    >+{{ stats.growth.users }}% this month</span
+                  >
                 </div>
-                <span class="activity-time">5 min ago</span>
               </div>
-              <div class="activity-item">
-                <span class="activity-icon">📅</span>
-                <div class="activity-info">
-                  <strong>Booking completed</strong>
-                  <p>Plumbing service by Juan dela Cruz</p>
+              <div class="stat-card">
+                <div class="stat-icon">🔧</div>
+                <div class="stat-info">
+                  <h3>Active Providers</h3>
+                  <p class="stat-number">{{ stats.activeProviders }}</p>
+                  <span class="stat-change positive"
+                    >+{{ stats.growth.providers }}% this month</span
+                  >
                 </div>
-                <span class="activity-time">12 min ago</span>
               </div>
-              <div class="activity-item">
-                <span class="activity-icon">⭐</span>
-                <div class="activity-info">
-                  <strong>New review posted</strong>
-                  <p>5-star review for cleaning service</p>
+              <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-info">
+                  <h3>Total Bookings</h3>
+                  <p class="stat-number">{{ stats.totalBookings }}</p>
+                  <span class="stat-change positive"
+                    >+{{ stats.growth.bookings }}% this month</span
+                  >
                 </div>
-                <span class="activity-time">1 hour ago</span>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                  <h3>Revenue</h3>
+                  <p class="stat-number">
+                    ₱{{ stats.totalRevenue.toLocaleString() }}
+                  </p>
+                  <span class="stat-change positive"
+                    >+{{ stats.growth.revenue }}% this month</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="recent-activity">
+              <h2>Recent Activity</h2>
+              <div v-if="loadingActivity" class="loading">
+                Loading activity...
+              </div>
+              <div v-else class="activity-list">
+                <div
+                  v-for="activity in activities"
+                  :key="activity.time"
+                  class="activity-item"
+                >
+                  <span class="activity-icon">{{ activity.icon }}</span>
+                  <div class="activity-info">
+                    <strong>{{ activity.title }}</strong>
+                    <p>{{ activity.description }}</p>
+                  </div>
+                  <span class="activity-time">{{
+                    formatTime(activity.time)
+                  }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -100,10 +107,15 @@
             <input
               type="text"
               v-model="userSearch"
+              @input="fetchUsers"
               placeholder="Search users..."
               class="search-input"
             />
-            <select v-model="userFilter" class="filter-select">
+            <select
+              v-model="userFilter"
+              @change="fetchUsers"
+              class="filter-select"
+            >
               <option value="all">All Users</option>
               <option value="customers">Customers</option>
               <option value="providers">Providers</option>
@@ -112,7 +124,9 @@
             </select>
           </div>
 
-          <div class="data-table">
+          <div v-if="loadingUsers" class="loading">Loading users...</div>
+
+          <div v-else class="data-table">
             <table>
               <thead>
                 <tr>
@@ -121,26 +135,26 @@
                   <th>Type</th>
                   <th>Status</th>
                   <th>Joined</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="user in users" :key="user.id">
+                <tr v-for="user in users" :key="user._id">
                   <td>{{ user.name }}</td>
                   <td>{{ user.email }}</td>
                   <td>
-                    <span :class="['badge', user.type]">{{ user.type }}</span>
+                    <span :class="['badge', user.role]">{{ user.role }}</span>
                   </td>
                   <td>
-                    <span :class="['status-badge', user.status]">
-                      {{ user.status }}
+                    <span
+                      :class="[
+                        'status-badge',
+                        user.isActive ? 'active' : 'inactive',
+                      ]"
+                    >
+                      {{ user.isActive ? "Active" : "Inactive" }}
                     </span>
                   </td>
-                  <td>{{ user.joined }}</td>
-                  <td>
-                    <button class="btn-action">View</button>
-                    <button class="btn-action">Edit</button>
-                  </td>
+                  <td>{{ formatDate(user.createdAt) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -153,10 +167,15 @@
             <input
               type="text"
               v-model="providerSearch"
+              @input="fetchProviders"
               placeholder="Search providers..."
               class="search-input"
             />
-            <select v-model="providerFilter" class="filter-select">
+            <select
+              v-model="providerFilter"
+              @change="fetchProviders"
+              class="filter-select"
+            >
               <option value="all">All Providers</option>
               <option value="verified">Verified</option>
               <option value="pending">Pending Verification</option>
@@ -164,7 +183,11 @@
             </select>
           </div>
 
-          <div class="data-table">
+          <div v-if="loadingProviders" class="loading">
+            Loading providers...
+          </div>
+
+          <div v-else class="data-table">
             <table>
               <thead>
                 <tr>
@@ -177,19 +200,31 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="provider in providers" :key="provider.id">
+                <tr v-for="provider in providers" :key="provider._id">
                   <td>{{ provider.name }}</td>
-                  <td>{{ provider.category }}</td>
-                  <td>{{ provider.rating }} ⭐</td>
-                  <td>{{ provider.jobs }}</td>
+                  <td>{{ provider.providerInfo?.category || "N/A" }}</td>
                   <td>
-                    <span :class="['verified-badge', provider.verified]">
-                      {{ provider.verified ? "Yes" : "No" }}
+                    {{ provider.providerInfo?.rating?.toFixed(1) || 0 }} ⭐
+                  </td>
+                  <td>{{ provider.providerInfo?.completedJobs || 0 }}</td>
+                  <td>
+                    <span
+                      :class="[
+                        'verified-badge',
+                        provider.providerInfo?.verified,
+                      ]"
+                    >
+                      {{ provider.providerInfo?.verified ? "Yes" : "No" }}
                     </span>
                   </td>
                   <td>
-                    <button class="btn-action">View</button>
-                    <button class="btn-action">Verify</button>
+                    <button
+                      v-if="!provider.providerInfo?.verified"
+                      @click="verifyProvider(provider._id)"
+                      class="btn-action"
+                    >
+                      Verify
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -203,19 +238,27 @@
             <input
               type="text"
               v-model="bookingSearch"
+              @input="fetchBookings"
               placeholder="Search bookings..."
               class="search-input"
             />
-            <select v-model="bookingFilter" class="filter-select">
+            <select
+              v-model="bookingFilter"
+              @change="fetchBookings"
+              class="filter-select"
+            >
               <option value="all">All Bookings</option>
               <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
               <option value="in-progress">In Progress</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
 
-          <div class="data-table">
+          <div v-if="loadingBookings" class="loading">Loading bookings...</div>
+
+          <div v-else class="data-table">
             <table>
               <thead>
                 <tr>
@@ -226,24 +269,20 @@
                   <th>Date</th>
                   <th>Amount</th>
                   <th>Status</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="booking in bookings" :key="booking.id">
-                  <td>{{ booking.id }}</td>
-                  <td>{{ booking.customer }}</td>
-                  <td>{{ booking.provider }}</td>
-                  <td>{{ booking.service }}</td>
-                  <td>{{ booking.date }}</td>
-                  <td>₱{{ booking.amount }}</td>
+                <tr v-for="booking in bookings" :key="booking._id">
+                  <td>{{ booking._id.slice(-6).toUpperCase() }}</td>
+                  <td>{{ booking.customer.name }}</td>
+                  <td>{{ booking.provider.name }}</td>
+                  <td>{{ booking.service.name }}</td>
+                  <td>{{ formatDate(booking.scheduledDate) }}</td>
+                  <td>₱{{ booking.totalAmount }}</td>
                   <td>
                     <span :class="['status-badge', booking.status]">
                       {{ booking.status }}
                     </span>
-                  </td>
-                  <td>
-                    <button class="btn-action">Details</button>
                   </td>
                 </tr>
               </tbody>
@@ -254,7 +293,11 @@
         <!-- Reviews Tab -->
         <div v-if="activeTab === 'reviews'" class="tab-content">
           <div class="table-controls">
-            <select v-model="reviewFilter" class="filter-select">
+            <select
+              v-model="reviewFilter"
+              @change="fetchReviews"
+              class="filter-select"
+            >
               <option value="all">All Reviews</option>
               <option value="pending">Pending Moderation</option>
               <option value="approved">Approved</option>
@@ -262,55 +305,48 @@
             </select>
           </div>
 
-          <div class="reviews-list">
-            <div v-for="review in reviews" :key="review.id" class="review-card">
+          <div v-if="loadingReviews" class="loading">Loading reviews...</div>
+
+          <div v-else class="reviews-list">
+            <div
+              v-for="review in reviews"
+              :key="review._id"
+              class="review-card"
+            >
               <div class="review-header">
                 <div class="review-user">
-                  <strong>{{ review.userName }}</strong>
+                  <strong>{{ review.customer.name }}</strong>
                   <span class="review-rating">{{
                     "⭐".repeat(review.rating)
                   }}</span>
                 </div>
-                <span class="review-date">{{ review.date }}</span>
+                <span class="review-date">{{
+                  formatDate(review.createdAt)
+                }}</span>
               </div>
               <p class="review-text">{{ review.comment }}</p>
               <div class="review-meta">
-                <span>Provider: {{ review.provider }}</span>
+                <span>Provider: {{ review.provider.name }}</span>
                 <span :class="['review-status', review.status]">
                   {{ review.status }}
                 </span>
               </div>
               <div class="review-actions">
-                <button class="btn-action">Approve</button>
-                <button class="btn-action danger">Remove</button>
+                <button
+                  v-if="review.status !== 'approved'"
+                  @click="updateReviewStatus(review._id, 'approved')"
+                  class="btn-action"
+                >
+                  Approve
+                </button>
+                <button
+                  v-if="review.status !== 'removed'"
+                  @click="updateReviewStatus(review._id, 'removed')"
+                  class="btn-action danger"
+                >
+                  Remove
+                </button>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Reports Tab -->
-        <div v-if="activeTab === 'reports'" class="tab-content">
-          <h2>System Reports</h2>
-          <div class="reports-grid">
-            <div class="report-card">
-              <h3>User Growth Report</h3>
-              <p>Monthly user registration trends</p>
-              <button class="btn btn-primary">Generate Report</button>
-            </div>
-            <div class="report-card">
-              <h3>Revenue Report</h3>
-              <p>Platform earnings and transactions</p>
-              <button class="btn btn-primary">Generate Report</button>
-            </div>
-            <div class="report-card">
-              <h3>Provider Performance</h3>
-              <p>Top providers by rating and bookings</p>
-              <button class="btn btn-primary">Generate Report</button>
-            </div>
-            <div class="report-card">
-              <h3>Service Analytics</h3>
-              <p>Most requested services and trends</p>
-              <button class="btn btn-primary">Generate Report</button>
             </div>
           </div>
         </div>
@@ -365,152 +401,242 @@
 </template>
 
 <script>
+import { adminAPI } from "@/services/api";
+
 export default {
   name: "AdminDashboardPage",
   data() {
     return {
       activeTab: "overview",
+      loading: false,
+      loadingActivity: false,
+      loadingUsers: false,
+      loadingProviders: false,
+      loadingBookings: false,
+      loadingReviews: false,
+
+      // Stats
+      stats: {
+        totalUsers: 0,
+        activeProviders: 0,
+        totalBookings: 0,
+        totalRevenue: 0,
+        growth: {
+          users: 0,
+          providers: 0,
+          bookings: 0,
+          revenue: 0,
+        },
+      },
+
+      // Activity
+      activities: [],
+
+      // Users
+      users: [],
       userSearch: "",
       userFilter: "all",
+
+      // Providers
+      providers: [],
       providerSearch: "",
       providerFilter: "all",
+
+      // Bookings
+      bookings: [],
       bookingSearch: "",
       bookingFilter: "all",
+
+      // Reviews
+      reviews: [],
       reviewFilter: "all",
+
       tabs: [
         { id: "overview", label: "Overview", icon: "📊" },
         { id: "users", label: "Users", icon: "👥" },
         { id: "providers", label: "Providers", icon: "🔧" },
         { id: "bookings", label: "Bookings", icon: "📅" },
         { id: "reviews", label: "Reviews", icon: "⭐" },
-        { id: "reports", label: "Reports", icon: "📈" },
         { id: "settings", label: "Settings", icon: "⚙️" },
-      ],
-      users: [
-        {
-          id: 1,
-          name: "Maria Santos",
-          email: "maria@email.com",
-          type: "customer",
-          status: "active",
-          joined: "Oct 1, 2025",
-        },
-        {
-          id: 2,
-          name: "Juan dela Cruz",
-          email: "juan@email.com",
-          type: "provider",
-          status: "active",
-          joined: "Sep 28, 2025",
-        },
-        {
-          id: 3,
-          name: "Pedro Reyes",
-          email: "pedro@email.com",
-          type: "provider",
-          status: "inactive",
-          joined: "Sep 25, 2025",
-        },
-      ],
-      providers: [
-        {
-          id: 1,
-          name: "Juan dela Cruz",
-          category: "Plumbing",
-          rating: 4.8,
-          jobs: 342,
-          verified: true,
-        },
-        {
-          id: 2,
-          name: "Maria Santos",
-          category: "Cleaning",
-          rating: 4.9,
-          jobs: 289,
-          verified: true,
-        },
-        {
-          id: 3,
-          name: "Pedro Reyes",
-          category: "Electrical",
-          rating: 4.7,
-          jobs: 156,
-          verified: false,
-        },
-      ],
-      bookings: [
-        {
-          id: "BOOK-001",
-          customer: "Ana Garcia",
-          provider: "Juan dela Cruz",
-          service: "Plumbing Repair",
-          date: "Oct 15, 2025",
-          amount: 800,
-          status: "pending",
-        },
-        {
-          id: "BOOK-002",
-          customer: "Carlos Lopez",
-          provider: "Maria Santos",
-          service: "House Cleaning",
-          date: "Oct 14, 2025",
-          amount: 1200,
-          status: "completed",
-        },
-        {
-          id: "BOOK-003",
-          customer: "Lisa Cruz",
-          provider: "Pedro Reyes",
-          service: "Electrical Wiring",
-          date: "Oct 16, 2025",
-          amount: 1500,
-          status: "in-progress",
-        },
-      ],
-      reviews: [
-        {
-          id: 1,
-          userName: "Ana Garcia",
-          rating: 5,
-          comment: "Excellent service! Very professional and punctual.",
-          provider: "Juan dela Cruz",
-          date: "Oct 12, 2025",
-          status: "approved",
-        },
-        {
-          id: 2,
-          userName: "Carlos Lopez",
-          rating: 4,
-          comment: "Good work, took a bit longer than expected.",
-          provider: "Maria Santos",
-          date: "Oct 11, 2025",
-          status: "pending",
-        },
-        {
-          id: 3,
-          userName: "Lisa Cruz",
-          rating: 5,
-          comment: "Amazing quality! Will book again.",
-          provider: "Pedro Reyes",
-          date: "Oct 10, 2025",
-          status: "flagged",
-        },
       ],
     };
   },
+
   computed: {
     currentTabTitle() {
       const tab = this.tabs.find((t) => t.id === this.activeTab);
       return tab ? tab.label : "";
     },
   },
+
+  watch: {
+    activeTab(newTab) {
+      if (newTab === "users" && this.users.length === 0) {
+        this.fetchUsers();
+      } else if (newTab === "providers" && this.providers.length === 0) {
+        this.fetchProviders();
+      } else if (newTab === "bookings" && this.bookings.length === 0) {
+        this.fetchBookings();
+      } else if (newTab === "reviews" && this.reviews.length === 0) {
+        this.fetchReviews();
+      }
+    },
+  },
+
   methods: {
+    async fetchStats() {
+      this.loading = true;
+      try {
+        const response = await adminAPI.getStats();
+        this.stats = response.data;
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchActivity() {
+      this.loadingActivity = true;
+      try {
+        const response = await adminAPI.getActivity();
+        this.activities = response.data.activities;
+      } catch (error) {
+        console.error("Error fetching activity:", error);
+      } finally {
+        this.loadingActivity = false;
+      }
+    },
+
+    async fetchUsers() {
+      this.loadingUsers = true;
+      try {
+        const response = await adminAPI.getAllUsers({
+          search: this.userSearch,
+          filter: this.userFilter,
+        });
+        this.users = response.data.users;
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        this.loadingUsers = false;
+      }
+    },
+
+    async fetchProviders() {
+      this.loadingProviders = true;
+      try {
+        const response = await adminAPI.getAllProviders({
+          search: this.providerSearch,
+          filter: this.providerFilter,
+        });
+        this.providers = response.data.providers;
+      } catch (error) {
+        console.error("Error fetching providers:", error);
+      } finally {
+        this.loadingProviders = false;
+      }
+    },
+
+    async verifyProvider(providerId) {
+      if (!confirm("Verify this provider?")) return;
+
+      try {
+        await adminAPI.verifyProvider(providerId);
+        alert("Provider verified successfully!");
+        await this.fetchProviders();
+      } catch (error) {
+        console.error("Error verifying provider:", error);
+        alert("Failed to verify provider");
+      }
+    },
+
+    async fetchBookings() {
+      this.loadingBookings = true;
+      try {
+        const response = await adminAPI.getAllBookings({
+          search: this.bookingSearch,
+          filter: this.bookingFilter,
+        });
+        this.bookings = response.data.bookings;
+      } catch (error) {
+        console.error("Error fetching bookings:", error);
+      } finally {
+        this.loadingBookings = false;
+      }
+    },
+
+    async fetchReviews() {
+      this.loadingReviews = true;
+      try {
+        const response = await adminAPI.getAllReviews({
+          filter: this.reviewFilter,
+        });
+        this.reviews = response.data.reviews;
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+      } finally {
+        this.loadingReviews = false;
+      }
+    },
+
+    async updateReviewStatus(reviewId, status) {
+      const action = status === "approved" ? "approve" : "remove";
+      if (!confirm(`${action} this review?`)) return;
+
+      try {
+        await adminAPI.updateReviewStatus(reviewId, status);
+        alert(`Review ${action}d successfully!`);
+        await this.fetchReviews();
+      } catch (error) {
+        console.error("Error updating review:", error);
+        alert("Failed to update review");
+      }
+    },
+
+    formatDate(date) {
+      return new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    },
+
+    formatTime(date) {
+      const now = new Date();
+      const activityDate = new Date(date);
+      const diffMs = now - activityDate;
+      const diffMins = Math.floor(diffMs / 60000);
+
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+
+      const diffDays = Math.floor(diffMins / 1440);
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays} days ago`;
+
+      return this.formatDate(date);
+    },
+
     handleLogout() {
       if (confirm("Are you sure you want to logout?")) {
         this.$store.dispatch("logout");
         this.$router.push("/admin/login");
       }
     },
+  },
+
+  async mounted() {
+    // Check if user is admin
+    if (!this.$store.getters.isAdmin) {
+      this.$router.push("/admin/login");
+      return;
+    }
+
+    // Fetch initial data
+    await this.fetchStats();
+    await this.fetchActivity();
   },
 };
 </script>
@@ -601,6 +727,7 @@ export default {
 
 .admin-main {
   padding: 2rem;
+  overflow-y: auto;
 }
 
 .admin-header {
@@ -617,6 +744,13 @@ export default {
   border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+  font-size: 1.1rem;
 }
 
 /* Stats Grid */
@@ -774,6 +908,7 @@ td {
   border-radius: 12px;
   font-size: 0.85rem;
   font-weight: 600;
+  text-transform: capitalize;
 }
 
 .badge.customer {
@@ -804,36 +939,48 @@ td {
   color: #4a5568;
 }
 
-.status-badge .pending {
+.status-badge.pending {
   background: #fef3c7;
   color: #92400e;
 }
-.status-badge.in-progress {
+
+.status-badge.confirmed {
   background: #dbeafe;
   color: #1e40af;
 }
+
+.status-badge.in-progress {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
 .status-badge.completed {
   background: #d1fae5;
   color: #065f46;
 }
+
 .status-badge.cancelled {
   background: #fee2e2;
   color: #991b1b;
 }
+
 .verified-badge {
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.85rem;
   font-weight: 600;
 }
+
 .verified-badge.true {
   background: #d1fae5;
   color: #065f46;
 }
+
 .verified-badge.false {
   background: #fee2e2;
   color: #991b1b;
 }
+
 .btn-action {
   padding: 6px 12px;
   border: 1px solid #e2e8f0;
@@ -844,50 +991,61 @@ td {
   transition: all 0.3s ease;
   margin-right: 0.5rem;
 }
+
 .btn-action:hover {
   background: #f7fafc;
   border-color: #1a202c;
 }
+
 .btn-action.danger {
   color: #c53030;
   border-color: #feb2b2;
 }
+
 .btn-action.danger:hover {
   background: #fff5f5;
 }
+
 /* Reviews List */
 .reviews-list {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
+
 .review-card {
   padding: 1.5rem;
   background: #f7fafc;
   border-radius: 12px;
 }
+
 .review-header {
   display: flex;
   justify-content: space-between;
   margin-bottom: 1rem;
 }
+
 .review-user strong {
   display: block;
   color: #1a202c;
   margin-bottom: 0.25rem;
 }
+
 .review-rating {
   font-size: 0.9rem;
 }
+
 .review-date {
   color: #a0aec0;
   font-size: 0.85rem;
 }
+
 .review-text {
   color: #4a5568;
   line-height: 1.6;
   margin-bottom: 1rem;
 }
+
 .review-meta {
   display: flex;
   justify-content: space-between;
@@ -898,77 +1056,73 @@ td {
   font-size: 0.9rem;
   color: #718096;
 }
+
 .review-status {
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.85rem;
   font-weight: 600;
+  text-transform: capitalize;
 }
+
 .review-status.approved {
   background: #d1fae5;
   color: #065f46;
 }
+
 .review-status.pending {
   background: #fef3c7;
   color: #92400e;
 }
+
 .review-status.flagged {
   background: #fee2e2;
   color: #991b1b;
 }
+
+.review-status.removed {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
 .review-actions {
   display: flex;
   gap: 0.5rem;
 }
-/* Reports Grid */
-.reports-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
-}
-.report-card {
-  padding: 2rem;
-  background: #f7fafc;
-  border-radius: 12px;
-  text-align: center;
-}
-.report-card h3 {
-  font-size: 1.25rem;
-  color: #1a202c;
-  margin-bottom: 0.5rem;
-}
-.report-card p {
-  color: #718096;
-  margin-bottom: 1.5rem;
-}
+
 /* Settings */
 .settings-sections {
   display: flex;
   flex-direction: column;
   gap: 2rem;
 }
+
 .settings-section {
   padding-bottom: 2rem;
   border-bottom: 1px solid #e2e8f0;
 }
+
 .settings-section:last-child {
   border-bottom: none;
 }
+
 .settings-section h3 {
   font-size: 1.25rem;
   color: #1a202c;
   margin-bottom: 1.5rem;
 }
+
 .form-group {
   margin-bottom: 1.5rem;
 }
+
 .form-group label {
   display: block;
   font-weight: 600;
   color: #2d3748;
   margin-bottom: 0.5rem;
 }
+
 .form-group input {
   width: 100%;
   max-width: 300px;
@@ -977,6 +1131,7 @@ td {
   border-radius: 8px;
   font-size: 1rem;
 }
+
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -985,11 +1140,13 @@ td {
   cursor: pointer;
   color: #4a5568;
 }
+
 .help-text {
   color: #718096;
   font-size: 0.9rem;
   margin-top: 0.5rem;
 }
+
 .btn-primary {
   background: #1a202c;
   color: white;
@@ -1000,19 +1157,24 @@ td {
   font-size: 1rem;
   transition: background 0.3s ease;
 }
+
 .btn-primary:hover {
   background: #2d3748;
 }
+
 @media (max-width: 1024px) {
   .admin-layout {
     grid-template-columns: 1fr;
   }
+
   .admin-sidebar {
     display: none;
   }
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
+
   .table-controls {
     flex-direction: column;
   }

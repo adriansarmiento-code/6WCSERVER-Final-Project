@@ -326,6 +326,7 @@ export default {
   display: flex;
   flex-direction: column;
   background: #fafbfc;
+  overflow: hidden;
 }
 
 .sidebar-header {
@@ -335,6 +336,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   background: white;
+  flex-shrink: 0;
 }
 
 .sidebar-header h2 {
@@ -348,6 +350,7 @@ export default {
   padding: 1.25rem;
   border-bottom: 1px solid #f1f5f9;
   background: white;
+  flex-shrink: 0;
 }
 
 .search-box input {
@@ -370,6 +373,7 @@ export default {
 .conversations-list {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   background: white;
 }
 
@@ -419,6 +423,7 @@ export default {
   object-fit: cover;
   border: 2px solid #e2e8f0;
   transition: border-color 0.3s ease;
+  flex-shrink: 0;
 }
 
 .conversation-item.active img,
@@ -490,12 +495,14 @@ export default {
   display: flex;
   flex-direction: column;
   background: white;
+  overflow: hidden;
 }
 
 .chat-container {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
 
 .chat-header {
@@ -506,6 +513,7 @@ export default {
   align-items: center;
   background: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
 }
 
 .chat-user-info {
@@ -551,6 +559,7 @@ export default {
 .messages-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 2rem;
   display: flex;
   flex-direction: column;
@@ -609,6 +618,8 @@ export default {
   position: relative;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .message.sent .message-content {
@@ -646,6 +657,7 @@ export default {
   padding: 1.5rem 2rem;
   border-top: 1px solid #f1f5f9;
   background: white;
+  flex-shrink: 0;
 }
 
 .message-form {
@@ -768,28 +780,6 @@ export default {
   padding: 2rem;
   color: #64748b;
   font-size: 1rem;
-}
-
-/* Auto-scroll indicator */
-.auto-scroll-indicator {
-  position: absolute;
-  bottom: 80px;
-  right: 2rem;
-  background: #667eea;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  z-index: 10;
-  transition: all 0.3s ease;
-}
-
-.auto-scroll-indicator:hover {
-  background: #5a67d8;
-  transform: translateY(-2px);
 }
 
 /* Responsive Design */
