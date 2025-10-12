@@ -16,6 +16,9 @@
 
     <!-- Only render if provider exists -->
     <div v-else-if="provider" class="container">
+      <button @click="goBackToSearch" class="btn btn-back">
+        ← Back to Search Results
+      </button>
       <!-- Provider Header -->
       <div class="provider-header">
         <div class="provider-image">
@@ -132,6 +135,18 @@ export default {
     };
   },
   methods: {
+    goBackToSearch() {
+      // Go back to search results with the same category
+      if (this.provider?.providerInfo?.category) {
+        this.$router.push({
+          path: "/search",
+          query: { category: this.provider.providerInfo.category },
+        });
+      } else {
+        // Fallback to services page if no category
+        this.$router.push("/services");
+      }
+    },
     getProfileImage(provider) {
       if (provider?.profileImage) {
         return provider.profileImage;
@@ -199,6 +214,26 @@ export default {
 </script>
 
 <style scoped>
+.btn-back {
+  background: #667eea;
+  color: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.btn-back:hover {
+  background: rgb(162, 188, 214);
+  border-color: #cbd5e0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .provider-profile-page {
   min-height: 100vh;
   background-color: #f8fafc;
@@ -488,6 +523,11 @@ export default {
 @media (max-width: 768px) {
   .container {
     padding: 1rem;
+  }
+  .btn-back {
+    margin-bottom: 1.5rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9rem;
   }
 
   .provider-header {

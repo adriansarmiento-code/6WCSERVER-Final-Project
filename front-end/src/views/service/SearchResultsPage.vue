@@ -4,6 +4,9 @@
     <LoginPromptModal :show="showLoginModal" @close="showLoginModal = false" />
     <div class="page-header">
       <div class="container">
+        <button @click="goBackToCategories" class="btn btn-back">
+          ← Back to Categories
+        </button>
         <h1>{{ categoryName }} Services</h1>
         <p>{{ filteredProviders.length }} providers found in your area</p>
       </div>
@@ -237,6 +240,9 @@ export default {
     },
   },
   methods: {
+    goBackToCategories() {
+      this.$router.push("/services");
+    },
     getProfileImage(provider) {
       if (provider?.profileImage) {
         return provider.profileImage;
@@ -312,6 +318,23 @@ export default {
 </script>
 
 <style scoped>
+.btn-back {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.btn-back:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
 .page-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;

@@ -11,13 +11,12 @@
             v-for="tab in tabs"
             :key="tab.id"
             :class="['admin-nav-item', { active: activeTab === tab.id }]"
-            @click="activeTab = tab.id"
+            @click="tab.id === 'logout' ? handleLogout() : (activeTab = tab.id)"
           >
             <span class="nav-icon">{{ tab.icon }}</span>
             <span>{{ tab.label }}</span>
           </button>
         </nav>
-        <button class="btn-logout" @click="handleLogout">Logout</button>
       </aside>
 
       <!-- Main Content -->
@@ -458,6 +457,7 @@ export default {
         { id: "bookings", label: "Bookings", icon: "📅" },
         { id: "reviews", label: "Reviews", icon: "⭐" },
         { id: "settings", label: "Settings", icon: "⚙️" },
+        { id: "logout", label: "Logout", icon: "🚪" },
       ],
     };
   },
@@ -707,22 +707,6 @@ export default {
 
 .nav-icon {
   font-size: 1.25rem;
-}
-
-.btn-logout {
-  margin: 2rem 1rem 0;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background 0.3s ease;
-}
-
-.btn-logout:hover {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 .admin-main {

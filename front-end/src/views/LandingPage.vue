@@ -74,7 +74,7 @@
           <div class="feature-card">
             <div class="feature-icon">📍</div>
             <h3>Location-Based</h3>
-            <p>Find service providers near you with radius-based search</p>
+            <p>Find service providers in your area around Angeles City</p>
           </div>
           <div class="feature-card">
             <div class="feature-icon">📅</div>
@@ -106,11 +106,6 @@
             <div class="category-icon">🧹</div>
             <h3>Cleaning</h3>
             <p>Home, office, deep cleaning</p>
-          </div>
-          <div class="category-card">
-            <div class="category-icon">🔨</div>
-            <h3>Carpentry</h3>
-            <p>Furniture, repairs, installations</p>
           </div>
         </div>
         <div class="view-all">
@@ -209,6 +204,12 @@ export default {
     AppHeader,
     AppFooter,
   },
+  data() {
+    return {
+      animatedCategories: false,
+      observerInitialized: false,
+    };
+  },
   computed: {
     isAuthenticated() {
       return this.$store.getters.isAuthenticated;
@@ -216,6 +217,14 @@ export default {
     currentUser() {
       return this.$store.getters.currentUser;
     },
+  },
+  mounted() {
+    this.initScrollAnimations();
+  },
+  beforeUnmount() {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
   },
   methods: {
     navigateToDashboard() {
@@ -225,11 +234,46 @@ export default {
         this.$router.push("/dashboard");
       }
     },
+    initScrollAnimations() {
+      const options = {
+        threshold: 0.2,
+        rootMargin: "0px 0px -50px 0px",
+      };
+
+      this.observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+          }
+        });
+      }, options);
+
+      // Observe all animatable elements
+      const animatables = document.querySelectorAll(
+        ".feature-card, .category-card, .step, .hero-content, .hero-image"
+      );
+      animatables.forEach((el) => {
+        el.classList.add("fade-in-up");
+        this.observer.observe(el);
+      });
+    },
   },
 };
 </script>
 
 <style scoped>
+/* Animations */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.fade-in-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* Hero Section */
 .hero {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -238,6 +282,23 @@ export default {
   min-height: 600px;
   display: flex;
   align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at 20% 50%,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
 }
 
 .hero .container {
@@ -245,6 +306,8 @@ export default {
   grid-template-columns: 1fr 1fr;
   gap: 60px;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .hero-content {
@@ -256,6 +319,7 @@ export default {
   font-weight: bold;
   margin-bottom: 1.5rem;
   line-height: 1.2;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .hero-subtitle {
@@ -286,9 +350,15 @@ export default {
   align-items: center;
   justify-content: center;
   border: 2px dashed rgba(255, 255, 255, 0.3);
-  background-image: url("@/assets/images/serviceprovider.jpg");
+  background-image: url("@/assets/images/serviceprovide.png");
   background-size: cover;
   background-position: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.hero-image .placeholder-image:hover {
+  transform: scale(1.02);
 }
 
 .placeholder-image {
@@ -319,6 +389,7 @@ export default {
   font-size: 2.5rem;
   margin-bottom: 3rem;
   color: #2d3748;
+  font-weight: 700;
 }
 
 .features-grid {
@@ -331,24 +402,33 @@ export default {
   background: white;
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.2);
 }
 
 .feature-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover .feature-icon {
+  transform: scale(1.1);
 }
 
 .feature-card h3 {
   font-size: 1.5rem;
   margin-bottom: 0.75rem;
   color: #2d3748;
+  font-weight: 600;
 }
 
 .feature-card p {
@@ -374,24 +454,59 @@ export default {
   padding: 2.5rem 1.5rem;
   background: #f8f9fa;
   border-radius: 12px;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.category-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 0;
+}
+
+.category-card:hover::before {
+  opacity: 1;
 }
 
 .category-card:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  transform: scale(1.05);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(102, 126, 234, 0.25);
 }
 
 .category-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.4s ease;
+}
+
+.category-card:hover .category-icon {
+  transform: scale(1.15);
 }
 
 .category-card h3 {
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 1;
+  font-weight: 600;
+}
+
+.category-card p {
+  position: relative;
+  z-index: 1;
 }
 
 .view-all {
@@ -403,17 +518,41 @@ export default {
   padding: 80px 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.how-it-works::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
 }
 
 .steps-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 2rem;
+  position: relative;
+  z-index: 1;
 }
 
 .step {
   text-align: center;
   padding: 2rem;
+  transition: transform 0.3s ease;
+}
+
+.step:hover {
+  transform: scale(1.05);
 }
 
 .step-number {
@@ -428,11 +567,19 @@ export default {
   font-weight: bold;
   margin: 0 auto 1.5rem;
   border: 2px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.step:hover .step-number {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(360deg);
 }
 
 .step h3 {
   font-size: 1.5rem;
   margin-bottom: 0.75rem;
+  font-weight: 600;
 }
 
 .step p {
@@ -443,7 +590,7 @@ export default {
 /* CTA Section */
 .cta {
   padding: 80px 0;
-  background-color: #f8f9fa;
+  background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
 }
 
 .cta-content {
@@ -456,6 +603,7 @@ export default {
   font-size: 2.5rem;
   margin-bottom: 1rem;
   color: #2d3748;
+  font-weight: 700;
 }
 
 .cta-content p {
@@ -479,30 +627,54 @@ export default {
   font-size: 1rem;
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid transparent;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn:hover::before {
+  width: 300px;
+  height: 300px;
 }
 
 .btn-primary {
   background-color: #667eea;
   color: white;
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
 }
 
 .btn-primary:hover {
   background-color: #5a67d8;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 .btn-secondary {
   background-color: white;
   color: #667eea;
   border-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .btn-outline {
@@ -514,6 +686,8 @@ export default {
 .btn-outline:hover {
   background-color: #667eea;
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
 }
 
 .btn-large {
