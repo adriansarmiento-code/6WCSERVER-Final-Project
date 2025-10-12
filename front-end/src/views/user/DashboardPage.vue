@@ -243,21 +243,12 @@
                   </button>
                 </form>
               </section>
-
               <section class="settings-section">
                 <h3>Notification Preferences</h3>
-                <label class="checkbox-label">
-                  <input type="checkbox" checked />
-                  <span>Email notifications for bookings</span>
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" checked />
-                  <span>SMS notifications</span>
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" />
-                  <span>Promotional offers</span>
-                </label>
+                <p class="help-text">
+                  All notifications will appear in your notification bell (🔔)
+                </p>
+                <!-- Removed checkboxes since notifications are now in-app only -->
               </section>
 
               <section class="settings-section">

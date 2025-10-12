@@ -1,5 +1,6 @@
 const Message = require('../models/Message');
 const User = require('../models/User');
+const { notifyNewMessage } = require('../utils/notificationService');
 
 // Helper to create conversation ID (always alphabetically sorted)
 const createConversationId = (userId1, userId2) => {
@@ -35,8 +36,8 @@ const getConversations = async (req, res) => {
           otherUser: {
             _id: otherUser._id,
             name: otherUser.name,
-            email: otherUser.email, // ✅ Include email
-            phone: otherUser.phone, // ✅ Include phone
+            email: otherUser.email, 
+            phone: otherUser.phone,
             profileImage: otherUser.profileImage,
           },
           lastMessage: msg.message,
@@ -71,8 +72,8 @@ const getMessages = async (req, res) => {
     const conversationId = createConversationId(userId, otherUserId);
 
     const messages = await Message.find({ conversation: conversationId })
-    .populate('sender', 'name email phone profileImage') // ✅ Added email and phone
-    .populate('receiver', 'name email phone profileImage') // ✅ Added email and phone
+    .populate('sender', 'name email phone profileImage') 
+    .populate('receiver', 'name email phone profileImage') 
       .sort({ createdAt: 1 });
 
     // Mark messages as read
@@ -123,6 +124,7 @@ const sendMessage = async (req, res) => {
     await newMessage.populate('sender', 'name profileImage');
     await newMessage.populate('receiver', 'name profileImage');
 
+    await notifyNewMessage(userId, otherUserId, req.user.name);
     res.status(201).json({ message: newMessage });
   } catch (error) {
     console.error(error);

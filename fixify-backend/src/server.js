@@ -23,6 +23,8 @@ app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes')); 
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+
 // Test route
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend is working!' });

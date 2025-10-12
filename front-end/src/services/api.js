@@ -92,6 +92,15 @@ export const messageAPI = {
     apiClient.post(`/messages/${otherUserId}`, { message }),
 };
 
+// Notification API calls
+export const notificationAPI = {
+  getAll: (params) => apiClient.get("/notifications", { params }),
+  getUnreadCount: () => apiClient.get("/notifications/unread-count"),
+  markAsRead: (id) => apiClient.put(`/notifications/${id}/read`),
+  markAllAsRead: () => apiClient.put("/notifications/read-all"),
+  delete: (id) => apiClient.delete(`/notifications/${id}`),
+};
+
 // Admin API calls
 export const adminAPI = {
   getStats: () => apiClient.get("/admin/stats"),

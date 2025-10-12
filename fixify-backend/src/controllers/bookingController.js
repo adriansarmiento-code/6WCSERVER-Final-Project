@@ -1,5 +1,10 @@
 const Booking = require('../models/Booking');
 const User = require('../models/User');
+const { 
+  notifyBookingCreated, 
+  notifyBookingStatusUpdate,
+  notifyPaymentReceived 
+} = require('../utils/notificationService');
 
 // @desc    Create new booking
 // @route   POST /api/bookings
@@ -42,6 +47,8 @@ exports.createBooking = async (req, res) => {
       status: 'pending',
       paymentStatus: 'pending',
     });
+
+    await notifyBookingCreated(booking, req.user._id, providerId);
 
     // Populate customer and provider info
     await booking.populate('customer', 'name email phone');
@@ -140,6 +147,7 @@ exports.updateBooking = async (req, res) => {
     }
 
     const { status, paymentStatus } = req.body;
+    const oldStatus = booking.status; 
 
     // Update status
     if (status) {
@@ -171,7 +179,17 @@ exports.updateBooking = async (req, res) => {
     await booking.save();
 
     await booking.populate('customer', 'name email phone');
-    await booking.populate('provider', 'name email phone providerInfo');
+    await booking.populate('provider', 'name email phone');
+
+    // ✅ Create notifications if status changed
+    if (status && status !== oldStatus) {
+      await notifyBookingStatusUpdate(
+        booking,
+        booking.customer._id,
+        booking.provider._id,
+        status
+      );
+    }
 
     res.json(booking);
   } catch (error) {

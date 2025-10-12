@@ -1,5 +1,6 @@
 const Review = require('../models/Review');
 const Booking = require('../models/Booking');
+const { notifyNewReview } = require('../utils/notificationService'); 
 
 // @desc    Create review for completed booking
 // @route   POST /api/reviews
@@ -8,6 +9,7 @@ exports.createReview = async (req, res) => {
   try {
     const { bookingId, rating, comment } = req.body;
 
+    // Verify booking exists and is completed
     const booking = await Booking.findById(bookingId);
 
     if (!booking) {
@@ -36,12 +38,15 @@ exports.createReview = async (req, res) => {
       comment,
     });
 
-    // ✅ UPDATE: Set hasReview flag on booking
+    // Update booking hasReview flag
     booking.hasReview = true;
     await booking.save();
 
     await review.populate('customer', 'name');
     await review.populate('provider', 'name providerInfo');
+
+    // ✅ Create notification for provider
+    await notifyNewReview(review, booking.provider, req.user.name, rating);
 
     res.status(201).json(review);
   } catch (error) {

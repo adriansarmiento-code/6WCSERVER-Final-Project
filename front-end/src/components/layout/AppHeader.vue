@@ -48,6 +48,7 @@
           </template>
 
           <template v-else>
+            <NotificationBell />
             <router-link
               :to="
                 currentUser?.role === 'provider'
@@ -85,8 +86,13 @@
 </template>
 
 <script>
+import NotificationBell from "@/components/NotificationBell.vue";
+
 export default {
   name: "AppHeader",
+  components: {
+    NotificationBell,
+  },
   data() {
     return {
       isMenuOpen: false,
@@ -223,8 +229,15 @@ export default {
 /* Navigation */
 .nav {
   display: flex;
-  gap: 2rem;
   align-items: center;
+  gap: 1rem;
+  position: relative;
+  z-index: 100;
+}
+
+.notification-bell {
+  position: relative;
+  z-index: 101; 
 }
 
 .nav-link {
