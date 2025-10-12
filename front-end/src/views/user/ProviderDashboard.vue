@@ -27,7 +27,7 @@
             class="btn-change-photo"
             :disabled="uploadingImage"
           >
-            {{ uploadingImage ? "⏳ Uploading..." : "📷 Change Photo" }}
+            {{ uploadingImage ? "⏳ Uploading..." : "Change Photo" }}
           </button>
           <input
             ref="imageInput"
@@ -839,7 +839,7 @@ export default {
 .role-badge {
   display: inline-block;
   background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
+  color: white !important;
   padding: 0.5rem 1.25rem;
   border-radius: 20px;
   font-size: 0.9rem;

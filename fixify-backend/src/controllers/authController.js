@@ -67,6 +67,39 @@ exports.register = async (req, res) => {
   }
 };
 
+exports.updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      user.name = req.body.name || user.name;
+      user.phone = req.body.phone || user.phone;
+      
+      // If provider, allow updating provider info
+      if (req.body.providerInfo && user.role === 'provider') {
+        user.providerInfo = { ...user.providerInfo, ...req.body.providerInfo };
+      }
+
+      const updatedUser = await user.save();
+
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+        profileImage: updatedUser.profileImage,
+        providerInfo: updatedUser.providerInfo,
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // Helper function to get default services by category
 function getDefaultServicesByCategory(category) {
   const serviceTemplates = {

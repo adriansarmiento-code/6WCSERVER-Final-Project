@@ -17,8 +17,8 @@ const getConversations = async (req, res) => {
     const messages = await Message.find({
       $or: [{ sender: userId }, { receiver: userId }],
     })
-      .populate('sender', 'name profileImage')
-      .populate('receiver', 'name profileImage')
+    .populate('sender', 'name email phone profileImage')
+    .populate('receiver', 'name email phone profileImage')
       .sort({ createdAt: -1 });
 
     // Group by conversation and get latest message
@@ -35,6 +35,8 @@ const getConversations = async (req, res) => {
           otherUser: {
             _id: otherUser._id,
             name: otherUser.name,
+            email: otherUser.email, // ✅ Include email
+            phone: otherUser.phone, // ✅ Include phone
             profileImage: otherUser.profileImage,
           },
           lastMessage: msg.message,
@@ -69,8 +71,8 @@ const getMessages = async (req, res) => {
     const conversationId = createConversationId(userId, otherUserId);
 
     const messages = await Message.find({ conversation: conversationId })
-      .populate('sender', 'name profileImage')
-      .populate('receiver', 'name profileImage')
+    .populate('sender', 'name email phone profileImage') // ✅ Added email and phone
+    .populate('receiver', 'name email phone profileImage') // ✅ Added email and phone
       .sort({ createdAt: 1 });
 
     // Mark messages as read

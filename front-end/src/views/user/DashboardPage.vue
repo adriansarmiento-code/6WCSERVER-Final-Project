@@ -202,28 +202,46 @@
             <div class="settings-sections">
               <section class="settings-section">
                 <h3>Personal Information</h3>
-                <div class="form-group">
-                  <label>Full Name</label>
-                  <input
-                    type="text"
-                    :value="currentUser ? currentUser.name : ''"
-                  />
-                </div>
-                <div class="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    :value="currentUser ? currentUser.email : ''"
-                  />
-                </div>
-                <div class="form-group">
-                  <label>Phone</label>
-                  <input
-                    type="tel"
-                    :value="currentUser ? currentUser.phone : ''"
-                  />
-                </div>
-                <button class="btn btn-primary">Save Changes</button>
+                <form @submit.prevent="saveSettings">
+                  <div class="form-group">
+                    <label>Full Name</label>
+                    <input
+                      type="text"
+                      v-model="settingsForm.name"
+                      placeholder="Enter your full name"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Email</label>
+                    <input
+                      type="email"
+                      v-model="settingsForm.email"
+                      placeholder="Enter your email"
+                      disabled
+                      title="Email cannot be changed"
+                    />
+                    <p class="help-text">
+                      Email cannot be changed for security reasons
+                    </p>
+                  </div>
+                  <div class="form-group">
+                    <label>Phone</label>
+                    <input
+                      type="tel"
+                      v-model="settingsForm.phone"
+                      placeholder="Enter your phone number"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    :disabled="savingSettings"
+                  >
+                    {{ savingSettings ? "Saving..." : "Save Changes" }}
+                  </button>
+                </form>
               </section>
 
               <section class="settings-section">
@@ -289,6 +307,12 @@ export default {
       bookings: [],
       loading: false,
       error: null,
+      settingsForm: {
+        name: "",
+        email: "",
+        phone: "",
+      },
+      savingSettings: false,
     };
   },
   computed: {
@@ -337,6 +361,29 @@ export default {
 
     async fetchFavorites() {
       this.favorites = [];
+    },
+    async saveSettings() {
+      this.savingSettings = true;
+      try {
+        const response = await authAPI.updateProfile({
+          name: this.settingsForm.name,
+          phone: this.settingsForm.phone,
+          // Note: email typically shouldn't be changed or requires verification
+        });
+
+        // Update Vuex store with new user data
+        this.$store.dispatch("login", {
+          user: response.data,
+          token: this.$store.getters.getToken,
+        });
+
+        alert("Settings saved successfully!");
+      } catch (error) {
+        console.error("Error saving settings:", error);
+        alert(error.response?.data?.message || "Failed to save settings");
+      } finally {
+        this.savingSettings = false;
+      }
     },
 
     async updateBookingStatus(bookingId, status) {
@@ -455,6 +502,13 @@ Payment: ${booking.paymentStatus}`);
       }
     }
 
+    const currentUser = this.$store.getters.currentUser;
+    if (currentUser) {
+      this.settingsForm.name = currentUser.name;
+      this.settingsForm.email = currentUser.email;
+      this.settingsForm.phone = currentUser.phone;
+    }
+
     this.fetchBookings();
     this.fetchFavorites();
   },
@@ -462,6 +516,18 @@ Payment: ${booking.paymentStatus}`);
 </script>
 
 <style scoped>
+.help-text {
+  color: #718096;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.form-group input:disabled {
+  background: #f7fafc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
 .dashboard-page {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   min-height: 100vh;
